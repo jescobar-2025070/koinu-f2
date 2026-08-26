@@ -11,6 +11,11 @@
   flex-direction: column;
   padding: 20px 32px 16px;
   gap: 16px;
+  /* --- ESTE ES EL FONDO GENERAL --- */
+  background: linear-gradient(180deg, #b5e3ef 0%, #1b68cf 35%, #000000 70%, #000000 100%);
+  
+  /* Opcional: Si el contenido crece y hay scroll, esto evita que el fondo se corte */
+  background-attachment: fixed;
 }
 
 /* ============================================================
@@ -164,7 +169,12 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #7fc4ff, #2f6fd6 70%);
+  
+  /* Agregas la URL de tu imagen aquí */
+  background-image: url('/Profile.png');
+  background-size: cover;    /* Hace que la imagen llene todo el círculo sin deformarse */
+  background-position: center; /* Centra la imagen dentro del círculo */
+  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,7 +187,7 @@
 }
 
 .profile-email {
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   color: var(--text-dim);
 }
 
@@ -274,4 +284,31 @@
   .main-panel {
     padding: 24px;
   }
+}
+
+/* ============================================================
+   Decoraciones de fondo (SVGs) en las esquinas inferiores
+   ============================================================ */
+
+.deco {
+  position: fixed;      /* Fija los elementos a la ventana del navegador */
+  z-index: 0;           /* Los mantiene al fondo */
+  pointer-events: none; /* Evita que bloqueen clics en botones o enlaces */
+  opacity: 0.6;         /* (Opcional) Transparencia para que no brillen demasiado */
+}
+
+/* Tubo curvo - Abajo a la izquierda */
+.deco-tube-left {
+  bottom: -50px; /* Un valor negativo hace que asome un poco desde afuera de la pantalla */
+  left: -50px;
+  width: 420px;
+  height: 420px;
+}
+
+/* Círculo/Aro - Abajo a la derecha */
+.deco-tube-right {
+  bottom: -30px;
+  right: -30px;
+  width: 260px;
+  height: 260px;
 }
