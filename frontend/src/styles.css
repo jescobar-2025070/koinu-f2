@@ -1,0 +1,183 @@
+/* ============================================================
+   Koinu Finance — Global Styles
+   Based on reference design at /home/mj_ddk/Descargas/kionustyle/
+   ============================================================ */
+
+:root {
+  --bg-top: #6fa3d3;
+  --bg-bottom: #050a0f;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-strong: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.20);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.30);
+  --cyan: #00e5ff;
+  --green: #00ff88;
+  --purple: #b28cff;
+  --blue-bar: #4c86f0;
+  --amber: #ffab5c;
+  --text-dim: rgba(255, 255, 255, 0.55);
+  --text-dim2: rgba(255, 255, 255, 0.78);
+  --radius-lg: 24px;
+  --radius-pill: 9999px;
+
+  --font-display: 'JetBrains Mono', ui-monospace, monospace;
+  --font-body: 'JetBrains Mono', ui-monospace, monospace;
+
+  --error: #ffb4ab;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+  --primary: #00e5ff;
+  --primary-container: #00e5ff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(180deg, var(--bg-top) 0%, #17324f 45%, var(--bg-bottom) 100%);
+  color: #fff;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+::selection { background: rgba(0, 229, 255, 0.35); }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 6px; }
+
+/* scrollbar */
+.scroll-y::-webkit-scrollbar { width: 6px; }
+.scroll-y::-webkit-scrollbar-track { background: transparent; }
+.scroll-y::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 10px; }
+
+.hidden { display: none !important; }
+
+/* ============================================================
+   Material Symbols (keep for alerts/notifications)
+   ============================================================ */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  user-select: none;
+}
+
+/* ============================================================
+   Alerts (for auth pages)
+   ============================================================ */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.alert--error {
+  background-color: rgba(147, 0, 10, 0.25);
+  color: var(--on-error-container);
+  border: 1px solid var(--error-container);
+}
+
+.alert--success {
+  background-color: rgba(0, 255, 157, 0.15);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+.alert--warning {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: #ffcc80;
+  border: 1px solid #ff9800;
+}
+
+.alert__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out 3s infinite;
+}
+
+.animate-blob {
+  animation: blob 10s infinite;
+}
+
+/* ============================================================
+   Decorative background blobs
+   ============================================================ */
+.deco {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(0.5px);
+}
+
+.deco-tube-left {
+  left: -140px;
+  bottom: -160px;
+  width: 420px;
+  height: 420px;
+}
+
+.deco-tube-right {
+  right: -120px;
+  top: 120px;
+  width: 260px;
+  height: 260px;
+  opacity: 0.7;
+}
