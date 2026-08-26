@@ -1,0 +1,47 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+const nodeEnv = process.env.NODE_ENV ?? 'development';
+
+const envFile = nodeEnv === 'test' ? '.env.test' : '.env';
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+
+export interface AppConfig {
+  nodeEnv: string;
+  isProduction: boolean;
+  isTest: boolean;
+  port: number;
+  databaseUrl: string;
+  jwtSecret: string;
+  jwtExpiresIn: string;
+  cookieName: string;
+  cookieSecure: boolean;
+  corsOrigin: string;
+  bcryptRounds: number;
+}
+
+function requireEnv(name: string, fallback?: string): string {
+  const value = process.env[name] ?? fallback;
+  if (value === undefined) {
+    throw new Error(`Falta la variable de entorno obligatoria: ${name}`);
+  }
+  return value;
+}
+
+function toBoolean(value: string): boolean {
+  return value.toLowerCase() === 'true';
+}
+
+export const config: AppConfig = {
+  nodeEnv,
+  isProduction: nodeEnv === 'production',
+  isTest: nodeEnv === 'test',
+  port: Number(process.env.PORT ?? 3000),
+  databaseUrl: requireEnv('DATABASE_URL'),
+  jwtSecret: requireEnv('JWT_SECRET'),
+  jwtExpiresIn: requireEnv('JWT_EXPIRES_IN', '1h'),
+  cookieName: requireEnv('COOKIE_NAME', 'finanzas_auth'),
+  cookieSecure: toBoolean(requireEnv('COOKIE_SECURE', 'false')),
+  corsOrigin: requireEnv('CORS_ORIGIN', 'http://localhost:4200'),
+  bcryptRounds: Number(requireEnv('BCRYPT_ROUNDS', '12')),
+};
