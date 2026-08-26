@@ -1,0 +1,29 @@
+<div class="view-table">
+  <div class="section-title">ÚLTIMOS MOVIMIENTOS</div>
+  <div class="table-wrap scroll-y">
+    <table>
+      <thead>
+        <tr>
+          <th><span class="th-pill">FECHA</span></th>
+          <th><span class="th-pill">TIPO</span></th>
+          <th><span class="th-pill">DESCRIPCIÓN</span></th>
+          <th><span class="th-pill">MONTO</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (movement of movements; track movement.id) {
+          <tr>
+            <td>{{ formatDate(movement.date) }}</td>
+            <td>{{ movement.type === 'ingreso' ? 'Ingreso' : 'Gasto' }}</td>
+            <td class="wrap">{{ movement.description ?? '—' }}</td>
+            <td class="right" [style]="getAmountStyle(movement.amount)">{{ formatCurrency(movement.amount) }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" style="text-align:center; color:rgba(255,255,255,0.5);">No hay movimientos registrados</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
