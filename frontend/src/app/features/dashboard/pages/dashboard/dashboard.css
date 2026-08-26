@@ -1,0 +1,73 @@
+/* Dashboard view */
+h2.welcome {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 34px;
+}
+
+.grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  row-gap: 52px;
+  column-gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.objective-values {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.objective-values .cyan {
+  color: var(--cyan);
+}
+
+.objective-values .separator {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.objective-values .amber {
+  color: var(--amber);
+}
+
+.progress-pill {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.progress-pill .fill {
+  position: absolute;
+  inset: 0;
+  width: var(--pct, 67%);
+  background: linear-gradient(90deg, #8fe3ff, var(--cyan));
+  border-radius: var(--radius-pill);
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.progress-pct {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .grid-2x2 {
+    grid-template-columns: 1fr;
+    row-gap: 36px;
+  }
+}
