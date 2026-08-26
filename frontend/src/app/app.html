@@ -1,0 +1,97 @@
+@if (authService.isAuthenticated()) {
+  <div class="app-view">
+    <!-- Decorative SVG tubes -->
+    <svg class="deco deco-tube-left" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tubeGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#bfe3ff"/>
+          <stop offset="55%" stop-color="#4c86f0"/>
+          <stop offset="100%" stop-color="#12294f"/>
+        </linearGradient>
+      </defs>
+      <path d="M40 380 C -20 300, 40 160, 150 150 C 260 140, 240 260, 340 260 C 400 260, 420 210, 400 160" fill="none" stroke="url(#tubeGrad)" stroke-width="46" stroke-linecap="round"/>
+    </svg>
+    <svg class="deco deco-tube-right" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tubeGrad2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#bfe3ff"/>
+          <stop offset="100%" stop-color="#2a5bb0"/>
+        </linearGradient>
+      </defs>
+      <circle cx="80" cy="80" r="70" fill="none" stroke="url(#tubeGrad2)" stroke-width="34"/>
+    </svg>
+
+    <header class="topbar">
+      <div class="logo">KOINU</div>
+      <nav class="topnav">
+        <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">INICIO</a>
+        <a routerLink="/periods" routerLinkActive="active">PERÍODOS</a>
+        <a routerLink="/movements" routerLinkActive="active">MOVIMIENTOS</a>
+        <a routerLink="/objectives" routerLinkActive="active">OBJETIVOS</a>
+      </nav>
+      <button class="btn-logout" (click)="logout()">CERRAR SESIÓN</button>
+    </header>
+
+    <div class="content-grid">
+      <aside class="sidebar">
+        @if (sidebarService.title()) {
+          <div class="sidebar-title">{{ sidebarService.title() }}</div>
+        }
+        <nav class="sidebar-nav">
+          @for (item of sidebarService.items(); track item.label) {
+            <a [routerLink]="item.route" routerLinkActive="active" class="side-item">
+              <span class="txt">{{ item.label }}</span>
+              @if (item.icon) {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" [innerHTML]="item.icon"></svg>
+              }
+            </a>
+          }
+        </nav>
+        <div class="profile-card">
+          <div class="avatar"></div>
+          <div>
+            <div class="profile-name">{{ (authService.user()?.email ?? '').split('@')[0] }}</div>
+            <div class="profile-email">{{ authService.user()?.email }}</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <router-outlet />
+      </main>
+    </div>
+
+    <div class="footer-row">
+      <div class="copyright">© 2026 Koinu Finance. Todos los derechos reservados.</div>
+      <div class="legal-pill">
+        <span>Privacidad</span>
+        <span>Términos</span>
+        <span>Ayuda</span>
+        <span>Contacto</span>
+      </div>
+    </div>
+  </div>
+} @else {
+  <!-- Decorative SVG tubes for auth pages -->
+  <svg class="deco deco-tube-left" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tubeGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#bfe3ff"/>
+        <stop offset="55%" stop-color="#4c86f0"/>
+        <stop offset="100%" stop-color="#12294f"/>
+      </linearGradient>
+    </defs>
+    <path d="M40 380 C -20 300, 40 160, 150 150 C 260 140, 240 260, 340 260 C 400 260, 420 210, 400 160" fill="none" stroke="url(#tubeGrad)" stroke-width="46" stroke-linecap="round"/>
+  </svg>
+  <svg class="deco deco-tube-right" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tubeGrad2" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#bfe3ff"/>
+        <stop offset="100%" stop-color="#2a5bb0"/>
+      </linearGradient>
+    </defs>
+    <circle cx="80" cy="80" r="70" fill="none" stroke="url(#tubeGrad2)" stroke-width="34"/>
+  </svg>
+
+  <router-outlet />
+}
