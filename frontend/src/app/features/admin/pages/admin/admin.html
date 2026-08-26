@@ -1,0 +1,19 @@
+<section class="page-container admin">
+  <div class="glass-card admin__header">
+    <h1 class="text-headline-lg">Administración</h1>
+    <p class="text-body-md text-on-surface-variant">
+      Sesión iniciada como <strong class="text-on-surface">{{ authService.user()?.email }}</strong> con rol
+      <span class="chip chip--primary">ADMIN</span>.
+    </p>
+  </div>
+
+  <div class="glass-card admin__placeholder">
+    <span class="material-symbols-outlined admin__icon">manage_accounts</span>
+    <h2 class="text-title-md">Gestión de usuarios</h2>
+    <p class="text-body-md text-on-surface-variant">
+      La administración de usuarios (crear, editar, activar/desactivar, cambiar roles,
+      restablecer contraseñas y eliminar) se implementará en etapas posteriores.
+      Por seguridad, el ADMIN no tiene acceso a la información financiera de los usuarios.
+    </p>
+  </div>
+</section>
