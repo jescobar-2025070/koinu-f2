@@ -42,7 +42,7 @@
             <a [routerLink]="item.route" routerLinkActive="active" class="side-item">
               <span class="txt">{{ item.label }}</span>
               @if (item.icon) {
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" [innerHTML]="item.icon"></svg>
+                <img [src]="item.icon" alt="Icono" width="16" height="16">
               }
             </a>
           }
