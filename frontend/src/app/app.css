@@ -101,6 +101,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Asegúrate de no tener justify-content aquí */
 }
 
 .sidebar-title {
@@ -108,15 +109,21 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   margin-bottom: 36px;
+  
+  /* NUEVO: Empuja el título (y la navegación que le sigue) hacia el centro */
+  margin-top: auto; 
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
   gap: 34px;
-  flex: 1;
   min-height: 0;
   overflow: hidden;
+  
+  /* Agrega márgenes automáticos arriba y abajo */
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .side-item {
@@ -143,6 +150,7 @@
 .side-item svg {
   flex: 0 0 auto;
   opacity: 0.85;
+  color: inherit; /* Hereda el color del texto activo/inactivo */
 }
 
 .side-item.active {
@@ -155,7 +163,6 @@
 }
 
 .profile-card {
-  margin-top: 18px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -163,6 +170,9 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
   padding: 10px 16px 10px 10px;
+  
+  /* Asegúrate de eliminar el margin-top: auto; anterior */
+  margin-top: 0; 
 }
 
 .avatar {
