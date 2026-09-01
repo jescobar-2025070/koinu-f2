@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
 import { DashboardService } from '../../../../core/services/dashboard.service';
@@ -12,6 +12,7 @@ export class Dashboard implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly periodoService = inject(PeriodoService);
   private readonly dashboardService = inject(DashboardService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   budgetTotal = 0;
   budgetAvailable = 0;
@@ -19,6 +20,7 @@ export class Dashboard implements OnInit {
   objectiveTarget = 0;
   objectiveProgress = 0;
   periodEnd = '—';
+  hasActivePeriod = false;
   loading = true;
 
   ngOnInit(): void {
@@ -32,6 +34,7 @@ export class Dashboard implements OnInit {
       const activePeriod = periodos.find((p) => p.status === 'ACTIVE');
 
       if (activePeriod) {
+        this.hasActivePeriod = true;
         this.periodEnd = this.formatDate(new Date(activePeriod.endDate));
 
         const data = await this.dashboardService.get(activePeriod.id);
@@ -49,6 +52,7 @@ export class Dashboard implements OnInit {
       console.error('Error loading dashboard data:', e);
     } finally {
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 

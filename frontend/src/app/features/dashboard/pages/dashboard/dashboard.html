@@ -1,27 +1,37 @@
-<h2 class="welcome">BIENVENIDO NUEVAMENTE!</h2>
-<div class="grid-2x2">
-  <div>
-    <div class="stat-label">PRESUPUESTO TOTAL</div>
-    <div class="stat-value">{{ formatCurrency(budgetTotal) }}</div>
-  </div>
-  <div>
-    <div class="stat-label">PRESUPUESTO DISPONIBLE</div>
-    <div class="stat-value green">{{ formatCurrency(budgetAvailable) }}</div>
-  </div>
-  <div>
-    <div class="stat-label">PROGRESO DEL OBJETIVO</div>
-    <div class="objective-values">
-      <span class="cyan">{{ formatCurrency(objectiveCurrent) }}</span>
-      <span class="separator"> de </span>
-      <span class="amber">{{ formatCurrency(objectiveTarget) }}</span>
-    </div>
-    <div class="progress-row">
-      <div class="progress-pill"><div class="fill" [style.--pct.%]="objectiveProgress"></div></div>
-      <div class="progress-pct">{{ objectiveProgress }} %</div>
-    </div>
-  </div>
-  <div>
-    <div class="stat-label">FINALIZACIÓN DEL PERÍODO</div>
-    <div class="stat-value cyan">{{ periodEnd }}</div>
-  </div>
+<div class="dashboard-head">
+  <h2 class="welcome">BIENVENIDO NUEVAMENTE!</h2>
 </div>
+
+@if (!hasActivePeriod && !loading) {
+  <div class="no-active">
+    <div class="no-active-title">NO HAY UN PERÍODO ACTIVO</div>
+    <div class="no-active-sub">Para registrar ingresos y gastos se debe crear o activar un período.</div>
+  </div>
+} @else {
+  <div class="grid-2x2">
+    <div>
+      <div class="stat-label">PRESUPUESTO TOTAL</div>
+      <div class="stat-value">{{ formatCurrency(budgetTotal) }}</div>
+    </div>
+    <div>
+      <div class="stat-label">PRESUPUESTO DISPONIBLE</div>
+      <div class="stat-value green">{{ formatCurrency(budgetAvailable) }}</div>
+    </div>
+    <div>
+      <div class="stat-label">PROGRESO DEL OBJETIVO</div>
+      <div class="objective-values">
+        <span class="cyan">{{ formatCurrency(objectiveCurrent) }}</span>
+        <span class="separator"> de </span>
+        <span class="amber">{{ formatCurrency(objectiveTarget) }}</span>
+      </div>
+      <div class="progress-row">
+        <div class="progress-pill"><div class="fill" [style.--pct.%]="objectiveProgress"></div></div>
+        <div class="progress-pct">{{ objectiveProgress }} %</div>
+      </div>
+    </div>
+    <div>
+      <div class="stat-label">FINALIZACIÓN DEL PERÍODO</div>
+      <div class="stat-value cyan">{{ periodEnd }}</div>
+    </div>
+  </div>
+}

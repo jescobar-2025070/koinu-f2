@@ -1,4 +1,62 @@
-<div class="view-placeholder">
-  <h2 class="welcome">INFORMES</h2>
-  <p>Los reportes detallados de ingresos, gastos y cumplimiento de objetivos estarán disponibles próximamente.</p>
+<div class="reports-view">
+  <div class="section-title">INFORMES</div>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="summary-label">PERÍODO</div>
+      <div class="summary-value">{{ activePeriodName }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">INGRESOS</div>
+      <div class="summary-value summary-value--income">{{ formatCurrency(stats.totalIngresos) }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">GASTOS</div>
+      <div class="summary-value summary-value--expense">{{ formatCurrency(stats.totalGastos) }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">DISPONIBLE</div>
+      <div class="summary-value">{{ formatCurrency(available) }}</div>
+    </div>
+  </div>
+
+  <div class="reports-toolbar">
+    <button class="report-action" (click)="exportCsv()" [disabled]="movements.length === 0">
+      <span class="material-symbols-outlined" style="font-size:14px;">download</span>
+      Exportar CSV
+    </button>
+  </div>
+
+  <div class="table-wrap scroll-y">
+    <table>
+      <thead>
+        <tr>
+          <th><span class="th-pill">FECHA</span></th>
+          <th><span class="th-pill">TIPO</span></th>
+          <th><span class="th-pill">CATEGORÍA</span></th>
+          <th><span class="th-pill">DESCRIPCIÓN</span></th>
+          <th><span class="th-pill">MONTO</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (movement of movements; track movement.id) {
+          <tr>
+            <td>{{ formatDate(movement.date) }}</td>
+            <td [style.color]="movement.type === 'EXPENSE' ? '#ff8080' : 'var(--green)'">
+              {{ movement.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}
+            </td>
+            <td>{{ getCategoryName(movement.type === 'INCOME' ? movement.incomeCategoryId : movement.expenseCategoryId) }}</td>
+            <td class="wrap">{{ movement.description ?? '—' }}</td>
+            <td class="right">{{ formatCurrency(movement.amount) }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" style="text-align:center; color:rgba(255,255,255,0.5);">
+              No hay movimientos en el período activo
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 </div>
