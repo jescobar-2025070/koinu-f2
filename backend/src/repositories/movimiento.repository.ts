@@ -133,4 +133,36 @@ export class MovimientoRepository {
     );
     return result.rowCount !== null && result.rowCount > 0;
   }
+
+  async update(
+    id: string,
+    data: { amount?: number; description?: string; date?: Date },
+  ): Promise<Movimiento | null> {
+    const updates: string[] = [];
+    const params: any[] = [id];
+    if (data.amount !== undefined) {
+      params.push(data.amount);
+      updates.push(`amount = $${params.length}`);
+    }
+    if (data.description !== undefined) {
+      params.push(data.description);
+      updates.push(`description = $${params.length}`);
+    }
+    if (data.date !== undefined) {
+      params.push(data.date);
+      updates.push(`date = $${params.length}`);
+    }
+    if (updates.length === 0) {
+      return this.findById(id);
+    }
+    params.push(new Date());
+    updates.push(`updated_at = $${params.length}`);
+    const result = await this.db.query<MovimientoRow>(
+      `UPDATE movimientos SET ${updates.join(', ')}
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id, user_id, periodo_id, type, income_category_id, expense_category_id, amount, description, date, created_at, updated_at, deleted_at`,
+      params,
+    );
+    return result.rows[0] ? mapRow(result.rows[0]) : null;
+  }
 }
