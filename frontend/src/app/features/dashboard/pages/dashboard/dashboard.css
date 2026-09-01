@@ -65,6 +65,42 @@ h2.welcome {
   font-weight: 700;
 }
 
+.dashboard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 34px;
+}
+
+.dashboard-head h2.welcome {
+  margin-bottom: 0;
+}
+
+.no-active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  flex: 1;
+  min-height: 320px;
+}
+
+.no-active-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--amber, #ffc46b);
+}
+
+.no-active-sub {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .grid-2x2 {
     grid-template-columns: 1fr;

@@ -1,6 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { MovimientoService } from '../../../../core/services/movimiento.service';
+import { PeriodoService } from '../../../../core/services/periodo.service';
 import { CategoriaService } from '../../../../core/services/categoria.service';
 import { Movimiento, Categoria } from '../../../../core/models/api.models';
 
@@ -12,7 +13,9 @@ import { Movimiento, Categoria } from '../../../../core/models/api.models';
 export class DashboardExpenses implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly movimientoService = inject(MovimientoService);
+  private readonly periodoService = inject(PeriodoService);
   private readonly categoriaService = inject(CategoriaService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   movements: Movimiento[] = [];
   private categories: Categoria[] = [];
@@ -24,12 +27,15 @@ export class DashboardExpenses implements OnInit {
 
   private async loadData(): Promise<void> {
     try {
+      const periodos = await this.periodoService.list();
+      const activePeriod = periodos.find((p) => p.status === 'ACTIVE');
       const [movimientos, categorias] = await Promise.all([
-        this.movimientoService.list(),
+        this.movimientoService.list(activePeriod?.id),
         this.categoriaService.listExpense(),
       ]);
       this.categories = categorias;
       this.movements = movimientos.filter((m) => m.type === 'EXPENSE').slice(0, 5);
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading expenses:', e);
     }
