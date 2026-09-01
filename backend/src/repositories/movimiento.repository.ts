@@ -5,13 +5,15 @@ interface MovimientoRow {
   id: string;
   user_id: string;
   periodo_id: string;
-  categoria_id: string;
   type: MovimientoType;
+  income_category_id: string | null;
+  expense_category_id: string | null;
   amount: number;
   description: string | null;
   date: Date;
   created_at: Date;
   updated_at: Date;
+  deleted_at: Date | null;
 }
 
 function mapRow(row: MovimientoRow): Movimiento {
@@ -19,66 +21,83 @@ function mapRow(row: MovimientoRow): Movimiento {
     id: row.id,
     userId: row.user_id,
     periodoId: row.periodo_id,
-    categoriaId: row.categoria_id,
     type: row.type,
+    incomeCategoryId: row.income_category_id,
+    expenseCategoryId: row.expense_category_id,
     amount: row.amount,
     description: row.description,
     date: row.date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
   };
+}
+
+interface MovimientoCreateData {
+  userId: string;
+  periodoId: string;
+  type: MovimientoType;
+  incomeCategoryId?: string | null;
+  expenseCategoryId?: string | null;
+  amount: number;
+  description?: string;
+  date?: Date;
 }
 
 export class MovimientoRepository {
   constructor(private readonly db: Db) {}
 
-  async findByUser(userId: string, limit: number = 100): Promise<Movimiento[]> {
-    const result = await this.db.query<MovimientoRow>(
-      `SELECT id, user_id, periodo_id, categoria_id, type, amount, description, date, created_at, updated_at
-         FROM movimientos
-        WHERE user_id = $1
-        ORDER BY date DESC, created_at DESC
-        LIMIT $2`,
-      [userId, limit],
-    );
+  async findByUser(userId: string, periodId?: string): Promise<Movimiento[]> {
+    let query = `
+      SELECT id, user_id, periodo_id, type, income_category_id, expense_category_id, amount, description, date, created_at, updated_at, deleted_at
+        FROM movimientos
+       WHERE user_id = $1 AND deleted_at IS NULL`;
+    const params: any[] = [userId];
+
+    if (periodId) {
+      query += ` AND periodo_id = $2`;
+      params.push(periodId);
+    }
+
+    query += ` ORDER BY date DESC, created_at DESC LIMIT 200`;
+    const result = await this.db.query<MovimientoRow>(query, params);
     return result.rows.map(mapRow);
   }
 
-  async findByPeriodo(periodoId: string): Promise<Movimiento[]> {
+  async findByPeriodo(periodId: string): Promise<Movimiento[]> {
     const result = await this.db.query<MovimientoRow>(
-      `SELECT id, user_id, periodo_id, categoria_id, type, amount, description, date, created_at, updated_at
+      `SELECT id, user_id, periodo_id, type, income_category_id, expense_category_id, amount, description, date, created_at, updated_at, deleted_at
          FROM movimientos
-        WHERE periodo_id = $1
+        WHERE periodo_id = $1 AND deleted_at IS NULL
         ORDER BY date DESC, created_at DESC`,
-      [periodoId],
+      [periodId],
     );
     return result.rows.map(mapRow);
   }
 
   async findById(id: string): Promise<Movimiento | null> {
     const result = await this.db.query<MovimientoRow>(
-      `SELECT id, user_id, periodo_id, categoria_id, type, amount, description, date, created_at, updated_at
+      `SELECT id, user_id, periodo_id, type, income_category_id, expense_category_id, amount, description, date, created_at, updated_at, deleted_at
          FROM movimientos
-        WHERE id = $1
+        WHERE id = $1 AND deleted_at IS NULL
         LIMIT 1`,
       [id],
     );
     return result.rows[0] ? mapRow(result.rows[0]) : null;
   }
 
-  async getStats(userId: string, periodoId?: string): Promise<{ totalIngresos: number; totalGastos: number }> {
+  async getStats(userId: string, periodId?: string): Promise<{ totalIngresos: number; totalGastos: number }> {
     let query = `
-      SELECT 
-        COALESCE(SUM(CASE WHEN type = 'ingreso' THEN amount ELSE 0 END), 0) as total_ingresos,
-        COALESCE(SUM(CASE WHEN type = 'gasto' THEN amount ELSE 0 END), 0) as total_gastos
+      SELECT
+        COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0) as total_ingresos,
+        COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0) as total_gastos
       FROM movimientos
-      WHERE user_id = $1
-    `;
+      WHERE user_id = $1 AND deleted_at IS NULL`;
     const params: any[] = [userId];
 
-    if (periodoId) {
-      query += ' AND periodo_id = $2';
-      params.push(periodoId);
+    if (periodId) {
+      query += ` AND periodo_id = $2`;
+      params.push(periodId);
     }
 
     const result = await this.db.query<{ total_ingresos: number; total_gastos: number }>(query, params);
@@ -88,27 +107,28 @@ export class MovimientoRepository {
     };
   }
 
-  async create(data: {
-    userId: string;
-    periodoId: string;
-    categoriaId: string;
-    type: MovimientoType;
-    amount: number;
-    description?: string;
-    date?: Date;
-  }): Promise<Movimiento> {
+  async create(data: MovimientoCreateData): Promise<Movimiento> {
     const result = await this.db.query<MovimientoRow>(
-      `INSERT INTO movimientos (user_id, periodo_id, categoria_id, type, amount, description, date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, user_id, periodo_id, categoria_id, type, amount, description, date, created_at, updated_at`,
-      [data.userId, data.periodoId, data.categoriaId, data.type, data.amount, data.description || null, data.date || new Date()],
+      `INSERT INTO movimientos (user_id, periodo_id, type, income_category_id, expense_category_id, amount, description, date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, user_id, periodo_id, type, income_category_id, expense_category_id, amount, description, date, created_at, updated_at, deleted_at`,
+      [
+        data.userId,
+        data.periodoId,
+        data.type,
+        data.incomeCategoryId ?? null,
+        data.expenseCategoryId ?? null,
+        data.amount,
+        data.description ?? null,
+        data.date ?? new Date(),
+      ],
     );
     return mapRow(result.rows[0]);
   }
 
   async delete(id: string): Promise<boolean> {
     const result = await this.db.query(
-      `DELETE FROM movimientos WHERE id = $1`,
+      `UPDATE movimientos SET deleted_at = NOW() WHERE id = $1`,
       [id],
     );
     return result.rowCount !== null && result.rowCount > 0;

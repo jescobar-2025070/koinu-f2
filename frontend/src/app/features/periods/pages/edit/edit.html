@@ -1,0 +1,21 @@
+<div class="view-form">
+  <div class="section-title">MODIFICAR PERÍODO ACTUAL</div>
+  <div class="form-grid">
+    <div class="form-field">
+      <label>NOMBRE</label>
+      <input type="text" class="glow-pill" [(ngModel)]="name" [disabled]="!currentPeriod">
+    </div>
+    <div class="form-field">
+      <label>FECHA INICIO</label>
+      <input type="date" class="glow-pill" [(ngModel)]="startDate" [disabled]="!currentPeriod">
+    </div>
+    <div class="form-field">
+      <label>FECHA FIN</label>
+      <input type="date" class="glow-pill" [(ngModel)]="endDate" [disabled]="!currentPeriod">
+    </div>
+  </div>
+  <div class="form-highlight">
+    <button class="btn-primary" style="max-width:260px;" (click)="saveChanges()" [disabled]="saving || !currentPeriod">Guardar Cambios</button>
+    <div class="save-msg">{{ saveMessage }}</div>
+  </div>
+</div>

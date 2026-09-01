@@ -1,9 +1,13 @@
+export type PeriodoStatus = 'DRAFT' | 'ACTIVE' | 'CANCELLED' | 'FINISHED';
+
 export interface Periodo {
   id: string;
   userId: string;
-  year: number;
-  month: number;
-  isOpen: boolean;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: PeriodoStatus;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }

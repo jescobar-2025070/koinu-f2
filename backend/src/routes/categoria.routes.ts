@@ -1,20 +1,15 @@
 import { Router } from 'express';
-import { CategoriaRepository } from '../repositories/categoria.repository';
-import { pool } from '../config/db';
+import { CategoriaController } from '../controllers/categoria.controller';
 import { authenticate } from '../middleware/authenticate';
 
 export function categoriaRouter(): Router {
   const router = Router();
-  const repo = new CategoriaRepository(pool);
+  const controller = new CategoriaController();
 
-  router.get('/', authenticate, async (_req, res, next) => {
-    try {
-      const categorias = await repo.findAll();
-      res.status(200).json({ categorias });
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.get('/income', authenticate, controller.listIngreso);
+  router.post('/income', authenticate, controller.createIngreso);
+  router.get('/expense', authenticate, controller.listGasto);
+  router.post('/expense', authenticate, controller.createGasto);
 
   return router;
 }

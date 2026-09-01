@@ -9,6 +9,8 @@ import { LoginRequest } from '../../dto/requests/auth/login.dto';
 import { UserService } from '../users/user.service';
 import { RoleRepository } from '../../repositories/role.repository';
 import { UserRepository } from '../../repositories/user.repository';
+import { CategoriaIngresoRepository } from '../../repositories/categoria-ingreso.repository';
+import { CategoriaGastoRepository } from '../../repositories/categoria-gasto.repository';
 import { hashPassword, comparePassword } from '../../utils/password.utils';
 import { toAuthUser } from '../../mappers/user.mapper';
 
@@ -35,6 +37,8 @@ export class AuthService {
     return withTransaction(async (client) => {
       const userRepository = new UserRepository(client);
       const roleRepository = new RoleRepository(client);
+      const categoriaIngresoRepository = new CategoriaIngresoRepository(client);
+      const categoriaGastoRepository = new CategoriaGastoRepository(client);
 
       const user = await userRepository.create({
         email: data.email,
@@ -50,6 +54,8 @@ export class AuthService {
       }
 
       await roleRepository.assignToUser(user.id, role.id);
+      await categoriaIngresoRepository.createDefaultsForUser(user.id);
+      await categoriaGastoRepository.createDefaultsForUser(user.id);
 
       return { user, roles: [role.name] };
     });

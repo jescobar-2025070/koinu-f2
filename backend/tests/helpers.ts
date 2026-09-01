@@ -21,6 +21,24 @@ export async function setupTestDb(): Promise<void> {
     TRUNCATE TABLE refresh_tokens, user_roles, users, roles RESTART IDENTITY CASCADE
   `);
   await pool.query(`INSERT INTO roles (name) VALUES ('ADMIN'), ('USR')`);
+  await pool.query(`
+    TRUNCATE TABLE categorias_ingreso, categorias_gasto RESTART IDENTITY CASCADE
+  `);
+  await pool.query(`
+    INSERT INTO categorias_ingreso (user_id, name, is_default) VALUES
+      (NULL, 'Salario', TRUE),
+      (NULL, 'Freelance', TRUE),
+      (NULL, 'Inversiones', TRUE),
+      (NULL, 'Otros Ingresos', TRUE)
+  `);
+  await pool.query(`
+    INSERT INTO categorias_gasto (user_id, name, is_default) VALUES
+      (NULL, 'Alimentación', TRUE),
+      (NULL, 'Transporte', TRUE),
+      (NULL, 'Educación', TRUE),
+      (NULL, 'Servicios', TRUE),
+      (NULL, 'Otros Gastos', TRUE)
+  `);
 }
 
 let emailCounter = 0;
