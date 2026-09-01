@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -18,6 +18,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 export class Register {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   protected readonly form = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -41,7 +42,7 @@ export class Register {
 
   submit(): void {
     if (this.form.invalid) {
-      this.errorMessage = 'Por favor, revisa los campos marcados antes de continuar.';
+      this.errorMessage = 'Por favor, revise los campos marcados antes de continuar.';
       return;
     }
 
@@ -54,10 +55,12 @@ export class Register {
       .then(() => this.router.navigate(['/login'], { state: { registered: true } }))
       .catch((error: any) => {
         const msg = error?.error?.error?.message;
-        this.errorMessage = msg || 'No se pudo completar el registro. Inténtalo de nuevo.';
+        this.errorMessage = msg || 'No se pudo completar el registro. Inténtelo nuevamente.';
+        this.cdr.markForCheck();
       })
       .finally(() => {
         this.submitting = false;
+        this.cdr.markForCheck();
       });
   }
 
