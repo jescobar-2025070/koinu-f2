@@ -10,6 +10,7 @@ export function movimientoRouter(): Router {
 
   router.get('/', authenticate, controller.list);
   router.post('/', authenticate, validate(validateCreateMovimientoRequest), controller.create);
+  router.put('/:id', authenticate, controller.update);
   router.delete('/:id', authenticate, controller.delete);
   router.get('/stats', authenticate, controller.stats);
 

@@ -63,6 +63,16 @@ export class MovimientoController {
     }
   };
 
+  update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      const movimiento = await this.movimientoService.update(req.params.id, userId, req.body);
+      res.status(200).json({ movimiento });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   stats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = this.requireUser(req);

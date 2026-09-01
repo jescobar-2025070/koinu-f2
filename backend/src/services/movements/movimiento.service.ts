@@ -210,6 +210,73 @@ export class MovimientoService {
     }
   }
 
+  async update(
+    id: string,
+    userId: string,
+    data: { amount?: number; description?: string; date?: string },
+  ): Promise<Movimiento> {
+    const movimiento = await this.movimientoRepository.findById(id);
+    if (!movimiento) {
+      throw new AppError(ErrorCodes.NOT_FOUND, {
+        message: 'Movimiento no encontrado.',
+        statusCode: 404,
+      });
+    }
+    if (movimiento.userId !== userId) {
+      throw new AppError(ErrorCodes.FORBIDDEN, {
+        message: 'No tienes acceso a este movimiento.',
+        statusCode: 403,
+      });
+    }
+
+    const periodo = await this.periodoRepository.findById(movimiento.periodoId);
+    if (!periodo || periodo.status !== 'ACTIVE') {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: 'Solo se pueden editar movimientos de un período activo.',
+        statusCode: 400,
+      });
+    }
+
+    const payload: { amount?: number; description?: string; date?: Date } = {};
+    if (data.amount !== undefined) {
+      if (typeof data.amount !== 'number' || isNaN(data.amount) || data.amount <= 0) {
+        throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+          message: 'El monto debe ser un número mayor a 0.',
+          statusCode: 400,
+        });
+      }
+      payload.amount = data.amount;
+    }
+    if (data.description !== undefined) {
+      payload.description = data.description;
+    }
+    if (data.date !== undefined) {
+      const fecha = new Date(data.date);
+      if (isNaN(fecha.getTime())) {
+        throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+          message: 'La fecha no tiene un formato válido.',
+          statusCode: 400,
+        });
+      }
+      if (fecha < periodo.startDate || fecha > periodo.endDate) {
+        throw new AppError(ErrorCodes.DATE_OUTSIDE_PERIOD, {
+          message: 'La fecha está fuera del periodo seleccionado.',
+          statusCode: 422,
+        });
+      }
+      payload.date = fecha;
+    }
+
+    const updated = await this.movimientoRepository.update(id, payload);
+    if (!updated) {
+      throw new AppError(ErrorCodes.INTERNAL_ERROR, {
+        message: 'Error al actualizar el movimiento.',
+        statusCode: 500,
+      });
+    }
+    return updated;
+  }
+
   async getStats(userId: string, periodId?: string): Promise<{ totalIngresos: number; totalGastos: number }> {
     return this.movimientoRepository.getStats(userId, periodId);
   }
