@@ -7,7 +7,7 @@ export interface SidebarItem {
 }
 
 // Colocas las rutas de tus imágenes (asegúrate de que existan en tu carpeta assets)
-const DASHBOARD_IMG = '/dashboard.png';
+const DASHBOARD_IMG = '/movimientos.png';
 const INGRESOS_IMG = '/ingresos.png';
 const GASTOS_IMG = '/gastos.png';
 const INFORMES_IMG = '/informes.png';
