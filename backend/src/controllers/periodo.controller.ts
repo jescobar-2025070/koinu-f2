@@ -10,16 +10,31 @@ export class PeriodoController {
     this.periodoService = new PeriodoService();
   }
 
+  private requireUser(req: Request): string {
+    if (!req.user) {
+      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+        message: 'Autenticación requerida.',
+        statusCode: 401,
+      });
+    }
+    return req.user.id;
+  }
+
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      const periodos = await this.periodoService.findByUser(req.user.id);
+      const userId = this.requireUser(req);
+      const periodos = await this.periodoService.findByUser(userId);
       res.status(200).json({ periodos });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      const periodo = await this.periodoService.findById(req.params.id, userId);
+      res.status(200).json({ periodo });
     } catch (error) {
       next(error);
     }
@@ -27,13 +42,12 @@ export class PeriodoController {
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      const periodo = await this.periodoService.create(req.user.id, req.body);
+      const userId = this.requireUser(req);
+      const periodo = await this.periodoService.create(userId, {
+        name: req.body.name,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+      });
       res.status(201).json({ periodo });
     } catch (error) {
       next(error);
@@ -42,13 +56,22 @@ export class PeriodoController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      const periodo = await this.periodoService.update(req.params.id, req.user.id, req.body);
+      const userId = this.requireUser(req);
+      const data: { name?: string; startDate?: Date; endDate?: Date } = {};
+      if (req.body.name !== undefined) data.name = req.body.name;
+      if (req.body.startDate !== undefined) data.startDate = new Date(req.body.startDate);
+      if (req.body.endDate !== undefined) data.endDate = new Date(req.body.endDate);
+      const periodo = await this.periodoService.update(req.params.id, userId, data);
+      res.status(200).json({ periodo });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  activate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      const periodo = await this.periodoService.activate(req.params.id, userId);
       res.status(200).json({ periodo });
     } catch (error) {
       next(error);
@@ -57,13 +80,18 @@ export class PeriodoController {
 
   finalize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      const periodo = await this.periodoService.finalize(req.params.id, req.user.id);
+      const userId = this.requireUser(req);
+      const periodo = await this.periodoService.finalize(req.params.id, userId);
+      res.status(200).json({ periodo });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  cancel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      const periodo = await this.periodoService.cancel(req.params.id, userId);
       res.status(200).json({ periodo });
     } catch (error) {
       next(error);

@@ -38,10 +38,10 @@ export class MovementsExpenses implements OnInit {
     try {
       const [periodos, categorias] = await Promise.all([
         this.periodoService.list(),
-        this.categoriaService.list(),
+        this.categoriaService.listExpense(),
       ]);
-      this.periodos = periodos.filter((p) => p.isOpen);
-      this.categorias = categorias.filter((c) => c.type === 'gasto');
+      this.periodos = periodos.filter((p) => p.status === 'ACTIVE');
+      this.categorias = categorias;
 
       if (this.periodos.length > 0) {
         this.selectedPeriodoId = this.periodos[0].id;
@@ -49,6 +49,10 @@ export class MovementsExpenses implements OnInit {
     } catch (e) {
       console.error('Error loading data:', e);
     }
+  }
+
+  get hasActivePeriod(): boolean {
+    return this.periodos.length > 0;
   }
 
   formatCurrency(amount: number): string {
@@ -65,9 +69,9 @@ export class MovementsExpenses implements OnInit {
     this.saveMessage = '';
     try {
       await this.movimientoService.create({
-        periodoId: this.selectedPeriodoId,
-        categoriaId: this.selectedCategoriaId,
-        type: 'gasto',
+        periodId: this.selectedPeriodoId,
+        type: 'EXPENSE',
+        expenseCategoryId: this.selectedCategoriaId,
         amount: this.monto,
         description: this.descripcion || undefined,
         date: this.fecha || undefined,

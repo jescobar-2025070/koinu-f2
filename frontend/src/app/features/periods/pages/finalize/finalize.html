@@ -3,12 +3,12 @@
   @if (currentPeriod) {
     <div class="form-grid">
       <div class="form-field">
-        <label>AÑO</label>
-        <input type="number" class="glow-pill" [value]="year" readonly>
+        <label>PERÍODO</label>
+        <input type="text" class="glow-pill" [value]="periodName" readonly>
       </div>
       <div class="form-field">
-        <label>MES</label>
-        <input type="text" class="glow-pill" [value]="monthName" readonly>
+        <label>RANGO</label>
+        <input type="text" class="glow-pill" [value]="periodRange" readonly>
       </div>
       <div class="form-field">
         <label>INGRESOS TOTALES</label>

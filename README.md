@@ -8,8 +8,8 @@ Plataforma web de **gestión de finanzas personales por periodos**.
 - **Descripción:** Aplicación web que permite a un usuario registrar, organizar y analizar sus ingresos, gastos, presupuestos, redistribuciones, excedentes y objetivos financieros dentro de periodos definidos por él mismo. Incluye un módulo administrativo para gestionar usuarios y configuración técnica.
 - **Objetivo:** Desarrollar un MVP funcional, testeable, mantenible y auditable. La administración está estrictamente separada de la información financiera personal (el `ADMIN` no puede consultar las finanzas de los usuarios).
 - **Problema que resuelve:** Permitir que una persona administre manualmente sus finanzas personales, obtenga información organizada y reciba recomendaciones básicas, sin realizar operaciones financieras externas.
-- **Estado actual del desarrollo:** Etapa 2 completa.
-- **Alcance actual:** Autenticación completa, módulos de negocio (períodos, movimientos, objetivos), dashboard con estadísticas, frontend integrado con backend en tiempo real, diseño glassmorphism con SVG decorativos.
+- **Estado actual del desarrollo:** Etapa 3 completa.
+- **Alcance actual:** Autenticación completa, módulos de negocio (períodos con estados y activación, movimientos con tratamiento fiscal, objetivos categorías separadas por usuario), dashboard con estadísticas, frontend integrado con backend en tiempo real, diseño glassmorphism con SVG decorativos.
 
 ## Tecnologías
 
@@ -285,6 +285,15 @@ Tras ejecutar `pnpm seed:full`:
 - [x] Integración frontend-backend en tiempo real (todas las páginas consumen API real).
 - [x] Seed completo de datos de prueba (períodos, movimientos, objetivos, categorías).
 
+### Etapa 3 (completada)
+
+- [x] Períodos con ciclo de vida: `DRAFT` → `ACTIVE` → `FINISHED` (o `CANCELLED`), activación/finalización/cancelación y máximo un `ACTIVE` por usuario.
+- [x] Ingresos con tratamiento fiscal: bruto/retención/neto calculado en el backend (`detalles_ingreso`).
+- [x] Categorías de ingreso y gasto separadas por usuario (predeterminadas globales + personalizadas).
+- [x] Dashboard por período que suma ingreso neto y calcula disponible.
+- [x] Backend realineado al diseño de la Etapa 3 (reset de base de datos, nuevas migraciones 005-011).
+- [x] Pruebas backend de Etapa 3 (períodos/estados, categorías por usuario, tratamiento fiscal, dashboard).
+
 ### Pendiente
 
 - [ ] Administración de usuarios desde el panel ADMIN (CRUD).
@@ -318,18 +327,24 @@ Base: `http://localhost:3000/api/v1`
 | Método | Ruta | Auth | Descripción |
 | --- | --- | --- | --- |
 | `GET` | `/periods` | Sí | Listar períodos del usuario |
-| `POST` | `/periods` | Sí | Crear período (año + mes) |
+| `GET` | `/periods/:id` | Sí | Obtener un período por id |
+| `POST` | `/periods` | Sí | Crear período (`name`, `startDate`, `endDate`) |
 | `PUT` | `/periods/:id` | Sí | Modificar período |
-| `PUT` | `/periods/:id/finalize` | Sí | Finalizar período |
+| `POST` | `/periods/:id/activate` | Sí | Activar período (DRAFT → ACTIVE) |
+| `POST` | `/periods/:id/finalize` | Sí | Finalizar período (ACTIVE → FINISHED) |
+| `POST` | `/periods/:id/cancel` | Sí | Cancelar período (→ CANCELLED) |
+| `GET` | `/periods/:id/dashboard` | Sí | Dashboard del período |
+
+> Estados de período: `DRAFT` → `ACTIVE` → `FINISHED` (o `CANCELLED`). Solo se puede registrar movimientos en un período `ACTIVE`, y existe máximo un `ACTIVE` por usuario.
 
 ### Movimientos
 
 | Método | Ruta | Auth | Descripción |
 | --- | --- | --- | --- |
-| `GET` | `/movements` | Sí | Listar movimientos (`?periodoId=`) |
-| `POST` | `/movements` | Sí | Crear movimiento |
+| `GET` | `/movements` | Sí | Listar movimientos (`?periodId=`) |
+| `POST` | `/movements` | Sí | Crear movimiento (ingreso con bruto/retención o gasto) |
 | `DELETE` | `/movements/:id` | Sí | Eliminar movimiento |
-| `GET` | `/movements/stats` | Sí | Estadísticas (`?periodoId=`) |
+| `GET` | `/movements/stats` | Sí | Estadísticas (`?periodId=`) |
 
 ### Objetivos
 
@@ -346,7 +361,10 @@ Base: `http://localhost:3000/api/v1`
 
 | Método | Ruta | Auth | Descripción |
 | --- | --- | --- | --- |
-| `GET` | `/categories` | Sí | Listar categorías |
+| `GET` | `/categories/income` | Sí | Listar categorías de ingreso del usuario |
+| `POST` | `/categories/income` | Sí | Crear categoría de ingreso |
+| `GET` | `/categories/expense` | Sí | Listar categorías de gasto del usuario |
+| `POST` | `/categories/expense` | Sí | Crear categoría de gasto |
 
 ### Health Check
 
@@ -382,19 +400,22 @@ POST /api/v1/auth/login
 
 Respuesta 200 incluye `Set-Cookie: finanzas_auth=...; HttpOnly; SameSite=Lax`.
 
-### Ejemplo de request de crear movimiento
+### Ejemplo de request de crear movimiento (ingreso)
 
 ```json
 POST /api/v1/movements
 {
-  "periodoId": "uuid-del-periodo",
-  "categoriaId": "uuid-de-categoria",
-  "type": "ingreso",
-  "amount": 2500.00,
+  "periodId": "uuid-del-periodo",
+  "type": "INCOME",
+  "incomeCategoryId": "uuid-de-categoria",
+  "grossAmount": 2500.00,
+  "retentionAmount": 125.00,
   "description": "Pago por desarrollo de software",
   "date": "2026-08-25"
 }
 ```
+
+El backend calcula el monto neto (`net = gross - retention`) y lo guarda en `movimientos.amount`. Para un gasto se usa `type: "EXPENSE"`, `expenseCategoryId` y `amount`.
 
 ## Pruebas
 
@@ -407,7 +428,7 @@ POST /api/v1/movements
   cp .env.test.example .env.test
   pnpm test
   ```
-- **Cobertura (23 casos):**
+- **Cobertura (36 casos):**
 
 | Área | Escenarios |
 | --- | --- |
@@ -415,6 +436,10 @@ POST /api/v1/movements
 | Login | login exitoso con cookie HttpOnly, credenciales incorrectas, correo inexistente, datos inválidos, cuenta desactivada, generación del JWT verificada vía `/auth/me`, logout |
 | Autenticación | `/auth/me` con token válido, sin token, token inválido, token expirado, token con otro secreto |
 | Roles | ADMIN puede listar roles, USR recibe 403, sin token 401, registro no permite asignar ADMIN |
+| Períodos y estados | creación en DRAFT, fecha de inicio > fin rechazada, activación y límite de un ACTIVE, finalización a FINISHED, acceso denegado a período ajeno |
+| Categorías por usuario | siembra de predeterminadas al registrar, listado por usuario autenticado |
+| Tratamiento fiscal | ingreso con cálculo de neto, retención > bruto rechazada, fecha fuera de período, movimiento en período no activo |
+| Dashboard | totales basados en ingreso neto y disponible, requiere autenticación |
 
 ### Frontend
 
@@ -507,9 +532,10 @@ POST /api/v1/movements
 | --- | --- | --- |
 | `id` | UUID | Identificador único |
 | `userId` | UUID | Dueño del período |
-| `year` | number | Año del período |
-| `month` | number | Mes del período (1-12) |
-| `isOpen` | boolean | `true` si está activo |
+| `name` | string | Nombre del período |
+| `startDate` | Date | Fecha de inicio |
+| `endDate` | Date | Fecha de fin |
+| `status` | `'DRAFT'` \| `'ACTIVE'` \| `'CANCELLED'` \| `'FINISHED'` | Estado del período |
 | `createdAt` | Date | Fecha de creación |
 | `updatedAt` | Date | Última modificación |
 
@@ -520,19 +546,26 @@ POST /api/v1/movements
 | `id` | UUID | Identificador único |
 | `userId` | UUID | Dueño del movimiento |
 | `periodoId` | UUID | Período asociado |
-| `categoriaId` | UUID | Categoría del movimiento |
-| `type` | `'ingreso'` \| `'gasto'` | Tipo de movimiento |
-| `amount` | number | Monto en Quetzales |
+| `type` | `'INCOME'` \| `'EXPENSE'` | Tipo de movimiento |
+| `incomeCategoryId` | UUID \| null | Categoría de ingreso (si `type=INCOME`) |
+| `expenseCategoryId` | UUID \| null | Categoría de gasto (si `type=EXPENSE`) |
+| `amount` | number | Monto neto en Quetzales (ingresos) o total (gastos) |
 | `description` | string \| null | Descripción opcional |
 | `date` | Date | Fecha del movimiento |
 
+> Para ingresos, el monto bruto, retención y neto se guardan en la tabla `detalles_ingreso`.
+
 ### Categoría
+
+Las categorías de ingreso y gasto son separadas por usuario (con predeterminadas globales).
 
 | Campo | Tipo | Descripción |
 | --- | --- | --- |
 | `id` | UUID | Identificador único |
+| `userId` | UUID \| null | Dueño; `null` = predeterminada global |
 | `name` | string | Nombre de la categoría |
-| `type` | `'ingreso'` \| `'gasto'` | Tipo de categoría |
+| `isDefault` | boolean | `true` si es una predeterminada del sistema |
+| `isActive` | boolean | `true` si está activa |
 
 ### Objetivo
 
@@ -569,6 +602,14 @@ Etapa 2: COMPLETADA
 - Sidebar dinámica, topbar pill, footer.
 - Integración frontend-backend completa.
 - Seed completo de datos de prueba.
+
+Etapa 3: COMPLETADA
+- Períodos con ciclo de vida (DRAFT → ACTIVE → FINISHED/CANCELLED) y máximo un ACTIVE por usuario.
+- Ingresos con tratamiento fiscal (bruto/retención/neto calculado en backend).
+- Categorías de ingreso y gasto separadas por usuario.
+- Dashboard por período (ingreso neto + disponible).
+- Backend realineado al diseño (reset de BD, migraciones 005-011).
+- Pruebas de Etapa 3 (períodos/estados, categorías, tratamiento fiscal, dashboard).
 
 Pendiente:
 - Página funcional de objetivos (actualmente placeholder).

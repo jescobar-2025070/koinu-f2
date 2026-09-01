@@ -1,7 +1,14 @@
 import { Db } from '../config/db';
-import { Impuesto } from '../entities/impuesto.entity';
 
-interface ImpuestoRow {
+export interface TratamientoFiscal {
+  id: string;
+  name: string;
+  rate: number;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+interface TratamientoRow {
   id: string;
   name: string;
   rate: number;
@@ -9,7 +16,7 @@ interface ImpuestoRow {
   created_at: Date;
 }
 
-function mapRow(row: ImpuestoRow): Impuesto {
+function mapRow(row: TratamientoRow): TratamientoFiscal {
   return {
     id: row.id,
     name: row.name,
@@ -19,23 +26,23 @@ function mapRow(row: ImpuestoRow): Impuesto {
   };
 }
 
-export class ImpuestoRepository {
+export class TratamientoFiscalRepository {
   constructor(private readonly db: Db) {}
 
-  async findActive(): Promise<Impuesto[]> {
-    const result = await this.db.query<ImpuestoRow>(
+  async findAll(): Promise<TratamientoFiscal[]> {
+    const result = await this.db.query<TratamientoRow>(
       `SELECT id, name, rate, is_active, created_at
-         FROM impuestos
+         FROM tratamientos_fiscales
         WHERE is_active = TRUE
-        ORDER BY name`,
+        ORDER BY rate ASC`,
     );
     return result.rows.map(mapRow);
   }
 
-  async findById(id: string): Promise<Impuesto | null> {
-    const result = await this.db.query<ImpuestoRow>(
+  async findById(id: string): Promise<TratamientoFiscal | null> {
+    const result = await this.db.query<TratamientoRow>(
       `SELECT id, name, rate, is_active, created_at
-         FROM impuestos
+         FROM tratamientos_fiscales
         WHERE id = $1
         LIMIT 1`,
       [id],

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { MovimientoService } from '../services/movements/movimiento.service';
+import { MovimientoService, CrearMovimientoInput } from '../services/movements/movimiento.service';
 import { AppError } from '../errors/app-error';
 import { ErrorCodes } from '../errors/error-codes';
 
@@ -10,16 +10,21 @@ export class MovimientoController {
     this.movimientoService = new MovimientoService();
   }
 
+  private requireUser(req: Request): string {
+    if (!req.user) {
+      throw new AppError(ErrorCodes.UNAUTHORIZED, {
+        message: 'Autenticación requerida.',
+        statusCode: 401,
+      });
+    }
+    return req.user.id;
+  }
+
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      const periodoId = req.query.periodoId as string | undefined;
-      const movimientos = await this.movimientoService.findByUser(req.user.id, periodoId);
+      const userId = this.requireUser(req);
+      const periodId = req.query.periodId as string | undefined;
+      const movimientos = await this.movimientoService.findByUser(userId, periodId);
       res.status(200).json({ movimientos });
     } catch (error) {
       next(error);
@@ -28,14 +33,21 @@ export class MovimientoController {
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      const movimiento = await this.movimientoService.create(req.user.id, req.body);
-      res.status(201).json({ movimiento });
+      const userId = this.requireUser(req);
+      const data: CrearMovimientoInput = {
+        periodId: req.body.periodId,
+        type: req.body.type,
+        incomeCategoryId: req.body.incomeCategoryId,
+        expenseCategoryId: req.body.expenseCategoryId,
+        grossAmount: req.body.grossAmount,
+        retentionAmount: req.body.retentionAmount,
+        taxTreatmentId: req.body.taxTreatmentId,
+        amount: req.body.amount,
+        description: req.body.description,
+        date: req.body.date,
+      };
+      const result = await this.movimientoService.create(userId, data);
+      res.status(201).json(result);
     } catch (error) {
       next(error);
     }
@@ -43,13 +55,8 @@ export class MovimientoController {
 
   delete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      await this.movimientoService.delete(req.params.id, req.user.id);
+      const userId = this.requireUser(req);
+      await this.movimientoService.delete(req.params.id, userId);
       res.status(204).end();
     } catch (error) {
       next(error);
@@ -58,14 +65,9 @@ export class MovimientoController {
 
   stats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user) {
-        throw new AppError(ErrorCodes.UNAUTHORIZED, {
-          message: 'Autenticación requerida.',
-          statusCode: 401,
-        });
-      }
-      const periodoId = req.query.periodoId as string | undefined;
-      const stats = await this.movimientoService.getStats(req.user.id, periodoId);
+      const userId = this.requireUser(req);
+      const periodId = req.query.periodId as string | undefined;
+      const stats = await this.movimientoService.getStats(userId, periodId);
       res.status(200).json(stats);
     } catch (error) {
       next(error);

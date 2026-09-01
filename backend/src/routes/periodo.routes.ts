@@ -9,9 +9,12 @@ export function periodoRouter(): Router {
   const controller = new PeriodoController();
 
   router.get('/', authenticate, controller.list);
+  router.get('/:id', authenticate, controller.getById);
   router.post('/', authenticate, validate(validateCreatePeriodoRequest), controller.create);
   router.put('/:id', authenticate, controller.update);
-  router.put('/:id/finalize', authenticate, controller.finalize);
+  router.post('/:id/activate', authenticate, controller.activate);
+  router.post('/:id/finalize', authenticate, controller.finalize);
+  router.post('/:id/cancel', authenticate, controller.cancel);
 
   return router;
 }

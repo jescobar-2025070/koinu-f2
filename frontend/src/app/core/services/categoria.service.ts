@@ -7,8 +7,13 @@ import { Categoria } from '../models/api.models';
 export class CategoriaService {
   private readonly api = inject(ApiService);
 
-  async list(): Promise<Categoria[]> {
-    const res = await firstValueFrom(this.api.get<{ categorias: Categoria[] }>('/categories'));
+  async listIncome(): Promise<Categoria[]> {
+    const res = await firstValueFrom(this.api.get<{ categorias: Categoria[] }>('/categories/income'));
+    return res.categorias;
+  }
+
+  async listExpense(): Promise<Categoria[]> {
+    const res = await firstValueFrom(this.api.get<{ categorias: Categoria[] }>('/categories/expense'));
     return res.categorias;
   }
 }

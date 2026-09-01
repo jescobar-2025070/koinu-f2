@@ -103,3 +103,26 @@ textarea.glow-pill {
     grid-template-columns: 1fr;
   }
 }
+
+.no-active-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.na-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--cyan);
+}
+
+.na-sub {
+  font-size: 0.9rem;
+  color: var(--text-dim2);
+  max-width: 520px;
+  line-height: 1.5;
+}

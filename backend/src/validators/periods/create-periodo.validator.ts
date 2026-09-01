@@ -1,30 +1,44 @@
 import { ValidationResult, validationFailure, validationSuccess } from '../validator-result';
 
-interface CreatePeriodoRequest {
-  year: number;
-  month: number;
+export interface CreatePeriodoRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
 }
 
 export function validateCreatePeriodoRequest(body: unknown): ValidationResult<CreatePeriodoRequest> {
   const errors: Record<string, string> = {};
   const data = (body ?? {}) as Record<string, unknown>;
 
-  const year = typeof data.year === 'number' ? data.year : parseInt(data.year as string, 10);
-  const month = typeof data.month === 'number' ? data.month : parseInt(data.month as string, 10);
+  const name = typeof data.name === 'string' ? data.name.trim() : '';
+  const startDate = typeof data.startDate === 'string' ? data.startDate.trim() : '';
+  const endDate = typeof data.endDate === 'string' ? data.endDate.trim() : '';
 
-  const currentYear = new Date().getFullYear();
-
-  if (isNaN(year) || year < 2000 || year > currentYear + 1) {
-    errors.year = `El año debe estar entre 2000 y ${currentYear + 1}.`;
+  if (!name) {
+    errors.name = 'El nombre del período es obligatorio.';
+  } else if (name.length > 100) {
+    errors.name = 'El nombre no puede superar los 100 caracteres.';
   }
 
-  if (isNaN(month) || month < 1 || month > 12) {
-    errors.month = 'El mes debe estar entre 1 y 12.';
+  if (!startDate || isNaN(Date.parse(startDate))) {
+    errors.startDate = 'La fecha de inicio es obligatoria y debe tener un formato válido.';
+  }
+
+  if (!endDate || isNaN(Date.parse(endDate))) {
+    errors.endDate = 'La fecha de fin es obligatoria y debe tener un formato válido.';
+  }
+
+  if (startDate && endDate && !isNaN(Date.parse(startDate)) && !isNaN(Date.parse(endDate))) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (start > end) {
+      errors.endDate = 'La fecha de fin debe ser posterior o igual a la fecha de inicio.';
+    }
   }
 
   if (Object.keys(errors).length > 0) {
     return validationFailure<CreatePeriodoRequest>(errors);
   }
 
-  return validationSuccess<CreatePeriodoRequest>({ year, month });
+  return validationSuccess<CreatePeriodoRequest>({ name, startDate, endDate });
 }

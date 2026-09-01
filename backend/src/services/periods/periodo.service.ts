@@ -1,4 +1,4 @@
-import { pool } from '../../config/db';
+import { pool, withTransaction } from '../../config/db';
 import { AppError } from '../../errors/app-error';
 import { ErrorCodes } from '../../errors/error-codes';
 import { Periodo } from '../../entities/periodo.entity';
@@ -15,23 +15,11 @@ export class PeriodoService {
     return this.periodoRepository.findByUser(userId);
   }
 
-  async create(userId: string, data: { year: number; month: number }): Promise<Periodo> {
-    const existing = await this.periodoRepository.findByUserAndPeriod(userId, data.year, data.month);
-    if (existing) {
-      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: 'Ya existe un período para este mes y año.',
-        statusCode: 409,
-      });
-    }
-
-    return this.periodoRepository.create({
-      userId,
-      year: data.year,
-      month: data.month,
-    });
+  async findActive(userId: string): Promise<Periodo | null> {
+    return this.periodoRepository.findActive(userId);
   }
 
-  async update(id: string, userId: string, data: { year?: number; month?: number }): Promise<Periodo> {
+  async findById(id: string, userId: string): Promise<Periodo> {
     const periodo = await this.periodoRepository.findById(id);
     if (!periodo) {
       throw new AppError(ErrorCodes.NOT_FOUND, {
@@ -39,17 +27,47 @@ export class PeriodoService {
         statusCode: 404,
       });
     }
-
     if (periodo.userId !== userId) {
       throw new AppError(ErrorCodes.FORBIDDEN, {
         message: 'No tienes acceso a este período.',
         statusCode: 403,
       });
     }
+    return periodo;
+  }
 
-    if (!periodo.isOpen) {
+  async create(userId: string, data: { name: string; startDate: Date; endDate: Date }): Promise<Periodo> {
+    if (data.startDate > data.endDate) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: 'No se puede modificar un período cerrado.',
+        message: 'La fecha de inicio debe ser anterior o igual a la fecha de fin.',
+        statusCode: 400,
+      });
+    }
+    return withTransaction(async (client) => {
+      const repo = new PeriodoRepository(client);
+      const active = await repo.findActive(userId);
+      if (active) {
+        await repo.setStatus(active.id, 'FINISHED');
+      }
+      return repo.create({
+        userId,
+        name: data.name,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        status: 'ACTIVE',
+      });
+    });
+  }
+
+  async update(
+    id: string,
+    userId: string,
+    data: { name?: string; startDate?: Date; endDate?: Date },
+  ): Promise<Periodo> {
+    const periodo = await this.findById(id, userId);
+    if (periodo.status !== 'DRAFT') {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: 'Solo se pueden modificar períodos en estado DRAFT.',
         statusCode: 400,
       });
     }
@@ -61,41 +79,71 @@ export class PeriodoService {
         statusCode: 500,
       });
     }
-
     return updated;
   }
 
-  async finalize(id: string, userId: string): Promise<Periodo> {
-    const periodo = await this.periodoRepository.findById(id);
-    if (!periodo) {
-      throw new AppError(ErrorCodes.NOT_FOUND, {
-        message: 'Período no encontrado.',
-        statusCode: 404,
-      });
-    }
-
-    if (periodo.userId !== userId) {
-      throw new AppError(ErrorCodes.FORBIDDEN, {
-        message: 'No tienes acceso a este período.',
-        statusCode: 403,
-      });
-    }
-
-    if (!periodo.isOpen) {
+  async activate(id: string, userId: string): Promise<Periodo> {
+    const periodo = await this.findById(id, userId);
+    if (periodo.status !== 'DRAFT') {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: 'El período ya está cerrado.',
+        message: 'Solo se pueden activar períodos en estado DRAFT.',
         statusCode: 400,
       });
     }
 
-    const closed = await this.periodoRepository.close(id);
-    if (!closed) {
-      throw new AppError(ErrorCodes.INTERNAL_ERROR, {
-        message: 'Error al cerrar el período.',
-        statusCode: 500,
+    const active = await this.periodoRepository.findActive(userId);
+    if (active) {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: 'Ya existe un período activo. Finalízalo o cancélalo antes de activar otro.',
+        statusCode: 409,
       });
     }
 
-    return closed;
+    const activated = await this.periodoRepository.setStatus(id, 'ACTIVE');
+    if (!activated) {
+      throw new AppError(ErrorCodes.INTERNAL_ERROR, {
+        message: 'Error al activar el período.',
+        statusCode: 500,
+      });
+    }
+    return activated;
+  }
+
+  async finalize(id: string, userId: string): Promise<Periodo> {
+    const periodo = await this.findById(id, userId);
+    if (periodo.status !== 'ACTIVE') {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: 'Solo se pueden finalizar períodos en estado ACTIVE.',
+        statusCode: 400,
+      });
+    }
+
+    const finalized = await this.periodoRepository.setStatus(id, 'FINISHED');
+    if (!finalized) {
+      throw new AppError(ErrorCodes.INTERNAL_ERROR, {
+        message: 'Error al finalizar el período.',
+        statusCode: 500,
+      });
+    }
+    return finalized;
+  }
+
+  async cancel(id: string, userId: string): Promise<Periodo> {
+    const periodo = await this.findById(id, userId);
+    if (periodo.status !== 'DRAFT' && periodo.status !== 'ACTIVE') {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
+        message: 'No se puede cancelar un período en su estado actual.',
+        statusCode: 400,
+      });
+    }
+
+    const cancelled = await this.periodoRepository.setStatus(id, 'CANCELLED');
+    if (!cancelled) {
+      throw new AppError(ErrorCodes.INTERNAL_ERROR, {
+        message: 'Error al cancelar el período.',
+        statusCode: 500,
+      });
+    }
+    return cancelled;
   }
 }

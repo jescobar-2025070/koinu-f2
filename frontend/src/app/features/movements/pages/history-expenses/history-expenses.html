@@ -15,7 +15,7 @@
         @for (movement of movements; track movement.id) {
           <tr>
             <td>{{ formatDate(movement.date) }}</td>
-            <td>{{ getCategoryName(movement.categoriaId) }}</td>
+            <td>{{ getCategoryName(movement.expenseCategoryId) }}</td>
             <td class="wrap">{{ movement.description ?? '—' }}</td>
             <td class="right">{{ formatCurrency(movement.amount) }}</td>
             <td>
