@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
 import { MovimientoService } from '../../../../core/services/movimiento.service';
@@ -23,6 +23,7 @@ export class PeriodsHistory implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly periodoService = inject(PeriodoService);
   private readonly movimientoService = inject(MovimientoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   periods: PeriodoHistorial[] = [];
 
@@ -57,6 +58,7 @@ export class PeriodsHistory implements OnInit {
       }
 
       this.periods = results;
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading period history:', e);
     }

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
 import { MovimientoService } from '../../../../core/services/movimiento.service';
@@ -13,6 +13,7 @@ export class PeriodsOverview implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly periodoService = inject(PeriodoService);
   private readonly movimientoService = inject(MovimientoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   hasActive = false;
   draftPeriods: Periodo[] = [];
@@ -56,6 +57,7 @@ export class PeriodsOverview implements OnInit {
         this.ingresosActual = stats.totalIngresos;
         this.maxChartValue = Math.max(stats.totalIngresos, stats.totalGastos, 25000);
       }
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading periods overview:', e);
     }
@@ -73,12 +75,19 @@ export class PeriodsOverview implements OnInit {
     this.message = '';
     try {
       await this.periodoService.activate(id);
-      this.message = '✓ Período activado. Ya puedes registrar movimientos.';
+      this.message = '✓ Período activado. Ya se pueden registrar movimientos.';
       await this.loadData();
-      setTimeout(() => (this.message = ''), 4000);
+      setTimeout(() => {
+        this.message = '';
+        this.cdr.markForCheck();
+      }, 4000);
     } catch (e: any) {
       this.message = '✗ ' + (e?.error?.error?.message ?? 'Error al activar el período');
-      setTimeout(() => (this.message = ''), 4000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.message = '';
+        this.cdr.markForCheck();
+      }, 4000);
     }
   }
 

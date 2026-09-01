@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
@@ -13,6 +13,7 @@ import { Periodo } from '../../../../core/models/api.models';
 export class PeriodsEdit implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly periodoService = inject(PeriodoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   currentPeriod: Periodo | null = null;
   name = '';
@@ -35,6 +36,7 @@ export class PeriodsEdit implements OnInit {
         this.startDate = this.currentPeriod.startDate.slice(0, 10);
         this.endDate = this.currentPeriod.endDate.slice(0, 10);
       }
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading period:', e);
     }
@@ -55,7 +57,11 @@ export class PeriodsEdit implements OnInit {
       this.saveMessage = '✗ ' + (e?.error?.error?.message ?? 'Error al guardar');
     } finally {
       this.saving = false;
-      setTimeout(() => (this.saveMessage = ''), 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.saveMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 }
