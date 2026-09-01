@@ -25,4 +25,14 @@ export class ObjetivoService {
   async delete(id: string): Promise<void> {
     await firstValueFrom(this.api.delete(`/objectives/${id}`));
   }
+
+  async deposit(id: string, amount: number): Promise<Objetivo> {
+    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/deposit`, { amount }));
+    return res.objetivo;
+  }
+
+  async withdraw(id: string, amount: number): Promise<Objetivo> {
+    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/withdraw`, { amount }));
+    return res.objetivo;
+  }
 }
