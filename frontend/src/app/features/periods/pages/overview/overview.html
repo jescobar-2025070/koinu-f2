@@ -41,7 +41,7 @@
   } @else {
     <div class="no-active">
       <div class="no-active-title">NO HAY UN PERÍODO ACTIVO</div>
-      <div class="no-active-sub">Para registrar ingresos y gastos debes activar un período en estado borrador.</div>
+      <div class="no-active-sub">Para registrar ingresos y gastos se debe activar un período en estado borrador.</div>
       @if (draftPeriods.length > 0) {
         <div class="draft-list">
           @for (p of draftPeriods; track p.id) {
@@ -55,7 +55,7 @@
           }
         </div>
       } @else {
-        <div class="no-active-sub">No tienes períodos en borrador. Crea uno en "Nuevo período".</div>
+        <div class="no-active-sub">No hay períodos en borrador. Cree uno en "Nuevo período".</div>
       }
       @if (message) {
         <div class="no-active-msg">{{ message }}</div>

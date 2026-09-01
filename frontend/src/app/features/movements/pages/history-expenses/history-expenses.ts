@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { MovimientoService } from '../../../../core/services/movimiento.service';
 import { CategoriaService } from '../../../../core/services/categoria.service';
@@ -13,6 +13,7 @@ export class MovementsHistoryExpenses implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly movimientoService = inject(MovimientoService);
   private readonly categoriaService = inject(CategoriaService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   movements: Movimiento[] = [];
   private categories: Categoria[] = [];
@@ -30,6 +31,7 @@ export class MovementsHistoryExpenses implements OnInit {
       ]);
       this.categories = categorias;
       this.movements = movimientos.filter((m) => m.type === 'EXPENSE');
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading expenses history:', e);
     }
@@ -52,6 +54,7 @@ export class MovementsHistoryExpenses implements OnInit {
     try {
       await this.movimientoService.delete(id);
       this.movements = this.movements.filter((m) => m.id !== id);
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error deleting movement:', e);
     }
