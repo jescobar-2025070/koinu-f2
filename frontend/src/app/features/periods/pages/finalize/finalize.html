@@ -1,0 +1,29 @@
+<div class="view-form">
+  <div class="section-title">FINALIZAR PERÍODO ACTUAL</div>
+  @if (currentPeriod) {
+    <div class="form-grid">
+      <div class="form-field">
+        <label>PERÍODO</label>
+        <input type="text" class="glow-pill" [value]="periodName" readonly>
+      </div>
+      <div class="form-field">
+        <label>RANGO</label>
+        <input type="text" class="glow-pill" [value]="periodRange" readonly>
+      </div>
+      <div class="form-field">
+        <label>INGRESOS TOTALES</label>
+        <input type="text" class="glow-pill" [value]="formatCurrency(totalIngresos)" readonly>
+      </div>
+      <div class="form-field">
+        <label>GASTOS TOTALES</label>
+        <input type="text" class="glow-pill" [value]="formatCurrency(totalGastos)" readonly>
+      </div>
+    </div>
+    <div class="form-highlight">
+      <button class="btn-primary" style="max-width:260px;" (click)="finalizePeriod()" [disabled]="finalizing">Finalizar Período</button>
+      <div class="save-msg">{{ saveMessage }}</div>
+    </div>
+  } @else {
+    <div style="text-align:center; color:rgba(255,255,255,0.5); padding:40px;">No hay período abierto para finalizar</div>
+  }
+</div>
