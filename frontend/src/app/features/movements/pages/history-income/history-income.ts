@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { MovimientoService } from '../../../../core/services/movimiento.service';
@@ -15,6 +15,7 @@ export class MovementsHistoryIncome implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly movimientoService = inject(MovimientoService);
   private readonly categoriaService = inject(CategoriaService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   movements: Movimiento[] = [];
   private categories: Categoria[] = [];
@@ -34,6 +35,7 @@ export class MovementsHistoryIncome implements OnInit {
       ]);
       this.categories = categorias;
       this.movements = movimientos.filter((m) => m.type === 'INCOME');
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading income history:', e);
     }
@@ -58,13 +60,30 @@ export class MovementsHistoryIncome implements OnInit {
       description: this.movements[index].description ?? '',
       amount: this.movements[index].amount,
     };
+    this.cdr.markForCheck();
   }
 
   async saveEdit(movement: Movimiento): Promise<void> {
-    this.editingIndex = null;
+    try {
+      const updated = await this.movimientoService.update(movement.id, {
+        amount: this.editData.amount,
+        description: this.editData.description,
+      });
+      const idx = this.movements.findIndex((m) => m.id === movement.id);
+      if (idx !== -1) {
+        this.movements[idx] = { ...this.movements[idx], amount: updated.amount, description: updated.description };
+      }
+      this.cdr.markForCheck();
+    } catch (e) {
+      console.error('Error saving income edit:', e);
+    } finally {
+      this.editingIndex = null;
+      this.cdr.markForCheck();
+    }
   }
 
   cancelEdit(): void {
     this.editingIndex = null;
+    this.cdr.markForCheck();
   }
 }

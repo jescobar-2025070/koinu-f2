@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
@@ -17,6 +17,7 @@ export class MovementsIncome implements OnInit {
   private readonly periodoService = inject(PeriodoService);
   private readonly categoriaService = inject(CategoriaService);
   private readonly movimientoService = inject(MovimientoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   periodos: Periodo[] = [];
   categorias: Categoria[] = [];
@@ -46,6 +47,7 @@ export class MovementsIncome implements OnInit {
       if (this.periodos.length > 0) {
         this.selectedPeriodoId = this.periodos[0].id;
       }
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading data:', e);
     }
@@ -70,7 +72,10 @@ export class MovementsIncome implements OnInit {
   async saveIncome(): Promise<void> {
     if (!this.selectedPeriodoId || !this.selectedCategoriaId || this.monto <= 0) {
       this.saveMessage = '✗ Complete todos los campos obligatorios';
-      setTimeout(() => (this.saveMessage = ''), 3000);
+      setTimeout(() => {
+        this.saveMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
       return;
     }
     this.saving = true;
@@ -92,7 +97,11 @@ export class MovementsIncome implements OnInit {
       this.saveMessage = '✗ ' + (e?.error?.error?.message ?? 'Error al guardar');
     } finally {
       this.saving = false;
-      setTimeout(() => (this.saveMessage = ''), 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.saveMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 }

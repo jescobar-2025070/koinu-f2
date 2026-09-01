@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
 import { MovimientoService } from '../../../../core/services/movimiento.service';
@@ -13,6 +13,7 @@ export class PeriodsFinalize implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly periodoService = inject(PeriodoService);
   private readonly movimientoService = inject(MovimientoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   currentPeriod: Periodo | null = null;
   periodName = '';
@@ -38,6 +39,7 @@ export class PeriodsFinalize implements OnInit {
         this.totalIngresos = stats.totalIngresos;
         this.totalGastos = stats.totalGastos;
       }
+      this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading period:', e);
     }
@@ -66,7 +68,11 @@ export class PeriodsFinalize implements OnInit {
       this.saveMessage = '✗ ' + (e?.error?.error?.message ?? 'Error al finalizar');
     } finally {
       this.finalizing = false;
-      setTimeout(() => (this.saveMessage = ''), 3000);
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.saveMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 }

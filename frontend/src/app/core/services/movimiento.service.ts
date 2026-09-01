@@ -7,8 +7,8 @@ import { DetalleIngreso, Movimiento, MovimientoStats } from '../models/api.model
 export class MovimientoService {
   private readonly api = inject(ApiService);
 
-  async list(periodoId?: string): Promise<Movimiento[]> {
-    const query = periodoId ? `?periodoId=${periodoId}` : '';
+  async list(periodId?: string): Promise<Movimiento[]> {
+    const query = periodId ? `?periodId=${periodId}` : '';
     const res = await firstValueFrom(this.api.get<{ movimientos: Movimiento[] }>(`/movements${query}`));
     return res.movimientos;
   }
@@ -32,8 +32,16 @@ export class MovimientoService {
     await firstValueFrom(this.api.delete(`/movements/${id}`));
   }
 
-  async stats(periodoId?: string): Promise<MovimientoStats> {
-    const query = periodoId ? `?periodoId=${periodoId}` : '';
+  async update(
+    id: string,
+    data: { amount?: number; description?: string; date?: string },
+  ): Promise<Movimiento> {
+    const res = await firstValueFrom(this.api.put<{ movimiento: Movimiento }>(`/movements/${id}`, data));
+    return res.movimiento;
+  }
+
+  async stats(periodId?: string): Promise<MovimientoStats> {
+    const query = periodId ? `?periodId=${periodId}` : '';
     return await firstValueFrom(this.api.get<MovimientoStats>(`/movements/stats${query}`));
   }
 }
