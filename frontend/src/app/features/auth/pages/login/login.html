@@ -2,12 +2,6 @@
   <form class="login-card" [formGroup]="form" (ngSubmit)="submit()">
     <h1>BIENVENIDO A KOINU</h1>
 
-    @if (sessionExpiredMessage) {
-      <div class="alert alert--warning">
-        <span class="material-symbols-outlined alert__icon">schedule</span>
-        <span>{{ sessionExpiredMessage }}</span>
-      </div>
-    }
     @if (errorMessage) {
       <div class="alert alert--error">
         <span class="material-symbols-outlined alert__icon">error</span>
@@ -24,12 +18,12 @@
       <label for="password">Contraseña</label>
       <input class="pill-input" id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password" autocomplete="current-password" placeholder="••••••••">
       <a href="#" class="forgot-link" (click)="$event.preventDefault(); togglePassword()">
-        {{ showPassword ? 'Ocultar contraseña' : 'Olvidé mi contraseña' }}
+        {{ showPassword ? 'Ocultar contraseña' : 'Contraseña olvidada' }}
       </a>
     </div>
 
     <div class="signup-row">
-      ¿No tienes una cuenta? <br>
+      ¿No tiene una cuenta? <br>
       <a class="link" routerLink="/register">Crear cuenta</a>
     </div>
 

@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from './core/auth/auth.service';
 import { SidebarService } from './core/services/sidebar.service';
 
@@ -12,9 +12,15 @@ import { SidebarService } from './core/services/sidebar.service';
 export class App implements OnInit {
   protected readonly authService = inject(AuthService);
   protected readonly sidebarService = inject(SidebarService);
+  private readonly router = inject(Router);
 
   ngOnInit(): void {
     void this.authService.ensureInitialized();
+  }
+
+  goToLogin(): void {
+    this.authService.confirmExpiredRedirect();
+    void this.router.navigate(['/login']);
   }
 
   logout(): void {

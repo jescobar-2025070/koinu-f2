@@ -95,3 +95,14 @@
 
   <router-outlet />
 }
+
+@if (authService.sessionExpired()) {
+  <div class="session-expired-overlay">
+    <div class="session-expired-modal">
+      <span class="material-symbols-outlined session-expired-icon">schedule</span>
+      <div class="session-expired-title">SESIÓN EXPIRADA</div>
+      <div class="session-expired-text">Su sesión ha expirado por inactividad. Para continuar debe iniciar sesión nuevamente.</div>
+      <button class="btn-primary" (click)="goToLogin()">Iniciar Sesión</button>
+    </div>
+  </div>
+}
