@@ -15,8 +15,8 @@ export class PeriodsFinalize implements OnInit {
   private readonly movimientoService = inject(MovimientoService);
 
   currentPeriod: Periodo | null = null;
-  year = 0;
-  month = 0;
+  periodName = '';
+  periodRange = '';
   totalIngresos = 0;
   totalGastos = 0;
   saveMessage = '';
@@ -30,10 +30,10 @@ export class PeriodsFinalize implements OnInit {
   private async loadPeriod(): Promise<void> {
     try {
       const periodos = await this.periodoService.list();
-      this.currentPeriod = periodos.find((p) => p.isOpen) ?? null;
+      this.currentPeriod = periodos.find((p) => p.status === 'ACTIVE') ?? null;
       if (this.currentPeriod) {
-        this.year = this.currentPeriod.year;
-        this.month = this.currentPeriod.month;
+        this.periodName = this.currentPeriod.name;
+        this.periodRange = `${this.formatDate(new Date(this.currentPeriod.startDate))} — ${this.formatDate(new Date(this.currentPeriod.endDate))}`;
         const stats = await this.movimientoService.stats(this.currentPeriod.id);
         this.totalIngresos = stats.totalIngresos;
         this.totalGastos = stats.totalGastos;
@@ -43,9 +43,11 @@ export class PeriodsFinalize implements OnInit {
     }
   }
 
-  get monthName(): string {
-    const names = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    return names[this.month] ?? '';
+  private formatDate(date: Date): string {
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
   }
 
   formatCurrency(amount: number): string {

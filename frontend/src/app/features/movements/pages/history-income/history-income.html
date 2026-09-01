@@ -16,7 +16,7 @@
           @if (editingIndex === i) {
             <tr class="editing-row">
               <td>{{ formatDate(movement.date) }}</td>
-              <td>{{ getCategoryName(movement.categoriaId) }}</td>
+              <td>{{ getCategoryName(movement.incomeCategoryId) }}</td>
               <td><input type="text" class="glow-pill-inline" [(ngModel)]="editData.description"></td>
               <td><input type="number" class="glow-pill-inline" [(ngModel)]="editData.amount"></td>
               <td class="actions-cell">
@@ -31,7 +31,7 @@
           } @else {
             <tr>
               <td>{{ formatDate(movement.date) }}</td>
-              <td>{{ getCategoryName(movement.categoriaId) }}</td>
+              <td>{{ getCategoryName(movement.incomeCategoryId) }}</td>
               <td class="wrap">{{ movement.description ?? '—' }}</td>
               <td class="right">{{ formatCurrency(movement.amount) }}</td>
               <td>

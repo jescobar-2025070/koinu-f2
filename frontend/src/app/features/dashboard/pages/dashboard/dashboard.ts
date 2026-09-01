@@ -1,9 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
-import { MovimientoService } from '../../../../core/services/movimiento.service';
-import { ObjetivoService } from '../../../../core/services/objetivo.service';
-import { Periodo, Objetivo } from '../../../../core/models/api.models';
+import { DashboardService } from '../../../../core/services/dashboard.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -13,8 +11,7 @@ import { Periodo, Objetivo } from '../../../../core/models/api.models';
 export class Dashboard implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly periodoService = inject(PeriodoService);
-  private readonly movimientoService = inject(MovimientoService);
-  private readonly objetivoService = inject(ObjetivoService);
+  private readonly dashboardService = inject(DashboardService);
 
   budgetTotal = 0;
   budgetAvailable = 0;
@@ -31,30 +28,22 @@ export class Dashboard implements OnInit {
 
   private async loadData(): Promise<void> {
     try {
-      const [periodos, objetivos] = await Promise.all([
-        this.periodoService.list(),
-        this.objetivoService.list(),
-      ]);
+      const periodos = await this.periodoService.list();
+      const activePeriod = periodos.find((p) => p.status === 'ACTIVE');
 
-      const openPeriod = periodos.find((p) => p.isOpen);
-      const periodoId = openPeriod?.id;
+      if (activePeriod) {
+        this.periodEnd = this.formatDate(new Date(activePeriod.endDate));
 
-      if (openPeriod) {
-        const endDate = new Date(openPeriod.year, openPeriod.month, 0);
-        this.periodEnd = this.formatDate(endDate);
-      }
+        const data = await this.dashboardService.get(activePeriod.id);
+        this.budgetTotal = data.totalIngresos;
+        this.budgetAvailable = data.disponible;
 
-      const stats = await this.movimientoService.stats(periodoId);
-      this.budgetTotal = stats.totalIngresos;
-      this.budgetAvailable = stats.totalIngresos - stats.totalGastos;
-
-      if (objetivos.length > 0) {
-        const obj = objetivos[0];
-        this.objectiveCurrent = obj.currentAmount;
-        this.objectiveTarget = obj.targetAmount;
-        this.objectiveProgress = obj.targetAmount > 0
-          ? Math.round((obj.currentAmount / obj.targetAmount) * 100)
-          : 0;
+        if (data.objetivos.length > 0) {
+          const obj = data.objetivos[0];
+          this.objectiveCurrent = obj.currentAmount;
+          this.objectiveTarget = obj.targetAmount;
+          this.objectiveProgress = obj.progress;
+        }
       }
     } catch (e) {
       console.error('Error loading dashboard data:', e);

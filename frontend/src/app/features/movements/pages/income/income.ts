@@ -38,10 +38,10 @@ export class MovementsIncome implements OnInit {
     try {
       const [periodos, categorias] = await Promise.all([
         this.periodoService.list(),
-        this.categoriaService.list(),
+        this.categoriaService.listIncome(),
       ]);
-      this.periodos = periodos.filter((p) => p.isOpen);
-      this.categorias = categorias.filter((c) => c.type === 'ingreso');
+      this.periodos = periodos.filter((p) => p.status === 'ACTIVE');
+      this.categorias = categorias;
 
       if (this.periodos.length > 0) {
         this.selectedPeriodoId = this.periodos[0].id;
@@ -49,6 +49,10 @@ export class MovementsIncome implements OnInit {
     } catch (e) {
       console.error('Error loading data:', e);
     }
+  }
+
+  get hasActivePeriod(): boolean {
+    return this.periodos.length > 0;
   }
 
   get retencion(): number {
@@ -73,10 +77,11 @@ export class MovementsIncome implements OnInit {
     this.saveMessage = '';
     try {
       await this.movimientoService.create({
-        periodoId: this.selectedPeriodoId,
-        categoriaId: this.selectedCategoriaId,
-        type: 'ingreso',
-        amount: this.monto,
+        periodId: this.selectedPeriodoId,
+        type: 'INCOME',
+        incomeCategoryId: this.selectedCategoriaId,
+        grossAmount: this.monto,
+        retentionAmount: this.retencion,
         description: this.descripcion || undefined,
         date: this.fecha || undefined,
       });

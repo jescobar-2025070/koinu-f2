@@ -15,8 +15,9 @@ export class PeriodsEdit implements OnInit {
   private readonly periodoService = inject(PeriodoService);
 
   currentPeriod: Periodo | null = null;
-  year = new Date().getFullYear();
-  month = new Date().getMonth() + 1;
+  name = '';
+  startDate = '';
+  endDate = '';
   saveMessage = '';
   saving = false;
 
@@ -28,10 +29,11 @@ export class PeriodsEdit implements OnInit {
   private async loadPeriod(): Promise<void> {
     try {
       const periodos = await this.periodoService.list();
-      this.currentPeriod = periodos.find((p) => p.isOpen) ?? null;
+      this.currentPeriod = periodos.find((p) => p.status === 'ACTIVE') ?? null;
       if (this.currentPeriod) {
-        this.year = this.currentPeriod.year;
-        this.month = this.currentPeriod.month;
+        this.name = this.currentPeriod.name;
+        this.startDate = this.currentPeriod.startDate.slice(0, 10);
+        this.endDate = this.currentPeriod.endDate.slice(0, 10);
       }
     } catch (e) {
       console.error('Error loading period:', e);
@@ -43,7 +45,11 @@ export class PeriodsEdit implements OnInit {
     this.saving = true;
     this.saveMessage = '';
     try {
-      await this.periodoService.update(this.currentPeriod.id, { year: this.year, month: this.month });
+      await this.periodoService.update(this.currentPeriod.id, {
+        name: this.name,
+        startDate: this.startDate,
+        endDate: this.endDate,
+      });
       this.saveMessage = '✓ Cambios guardados';
     } catch (e: any) {
       this.saveMessage = '✗ ' + (e?.error?.error?.message ?? 'Error al guardar');

@@ -26,16 +26,16 @@ export class DashboardExpenses implements OnInit {
     try {
       const [movimientos, categorias] = await Promise.all([
         this.movimientoService.list(),
-        this.categoriaService.list(),
+        this.categoriaService.listExpense(),
       ]);
       this.categories = categorias;
-      this.movements = movimientos.filter((m) => m.type === 'gasto').slice(0, 5);
+      this.movements = movimientos.filter((m) => m.type === 'EXPENSE').slice(0, 5);
     } catch (e) {
       console.error('Error loading expenses:', e);
     }
   }
 
-  getCategoryName(id: string): string {
+  getCategoryName(id: string | null): string {
     return this.categories.find((c) => c.id === id)?.name ?? '—';
   }
 

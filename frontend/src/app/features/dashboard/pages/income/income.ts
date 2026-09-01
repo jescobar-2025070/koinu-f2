@@ -26,16 +26,16 @@ export class DashboardIncome implements OnInit {
     try {
       const [movimientos, categorias] = await Promise.all([
         this.movimientoService.list(),
-        this.categoriaService.list(),
+        this.categoriaService.listIncome(),
       ]);
       this.categories = categorias;
-      this.movements = movimientos.filter((m) => m.type === 'ingreso').slice(0, 5);
+      this.movements = movimientos.filter((m) => m.type === 'INCOME').slice(0, 5);
     } catch (e) {
       console.error('Error loading income:', e);
     }
   }
 
-  getCategoryName(id: string): string {
+  getCategoryName(id: string | null): string {
     return this.categories.find((c) => c.id === id)?.name ?? '—';
   }
 

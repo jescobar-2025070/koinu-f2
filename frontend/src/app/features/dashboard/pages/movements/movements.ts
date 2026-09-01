@@ -24,18 +24,19 @@ export class DashboardMovements implements OnInit {
 
   private async loadData(): Promise<void> {
     try {
-      const [movimientos, categorias] = await Promise.all([
+      const [movimientos, ingresos, gastos] = await Promise.all([
         this.movimientoService.list(),
-        this.categoriaService.list(),
+        this.categoriaService.listIncome(),
+        this.categoriaService.listExpense(),
       ]);
-      this.categories = categorias;
+      this.categories = [...ingresos, ...gastos];
       this.movements = movimientos.slice(0, 8);
     } catch (e) {
       console.error('Error loading movements:', e);
     }
   }
 
-  getCategoryName(id: string): string {
+  getCategoryName(id: string | null): string {
     return this.categories.find((c) => c.id === id)?.name ?? '—';
   }
 
@@ -48,7 +49,7 @@ export class DashboardMovements implements OnInit {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   }
 
-  getAmountStyle(amount: number): string {
-    return amount < 0 ? 'color:#ff8080' : 'color:var(--green)';
+  getAmountStyle(type: string): string {
+    return type === 'EXPENSE' ? 'color:#ff8080' : 'color:var(--green)';
   }
 }

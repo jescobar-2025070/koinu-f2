@@ -30,16 +30,16 @@ export class MovementsHistoryIncome implements OnInit {
     try {
       const [movimientos, categorias] = await Promise.all([
         this.movimientoService.list(),
-        this.categoriaService.list(),
+        this.categoriaService.listIncome(),
       ]);
       this.categories = categorias;
-      this.movements = movimientos.filter((m) => m.type === 'ingreso');
+      this.movements = movimientos.filter((m) => m.type === 'INCOME');
     } catch (e) {
       console.error('Error loading income history:', e);
     }
   }
 
-  getCategoryName(id: string): string {
+  getCategoryName(id: string | null): string {
     return this.categories.find((c) => c.id === id)?.name ?? '—';
   }
 

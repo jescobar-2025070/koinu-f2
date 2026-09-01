@@ -4,8 +4,8 @@
     <table>
       <thead>
         <tr>
-          <th><span class="th-pill">AÑO</span></th>
-          <th><span class="th-pill">MES</span></th>
+          <th><span class="th-pill">PERÍODO</span></th>
+          <th><span class="th-pill">RANGO</span></th>
           <th><span class="th-pill">ESTADO</span></th>
           <th><span class="th-pill">INGRESOS</span></th>
           <th><span class="th-pill">GASTOS</span></th>
@@ -14,9 +14,9 @@
       <tbody>
         @for (period of periods; track period.id) {
           <tr>
-            <td>{{ period.year }}</td>
-            <td>{{ getMonthName(period.month) }}</td>
-            <td>{{ period.status }}</td>
+            <td>{{ period.name }}</td>
+            <td>{{ period.range }}</td>
+            <td>{{ period.statusLabel }}</td>
             <td class="right" style="color:var(--green)">{{ formatCurrency(period.totalIngresos) }}</td>
             <td class="right" style="color:#ff8080">{{ formatCurrency(period.totalGastos) }}</td>
           </tr>

@@ -14,9 +14,9 @@
         @for (movement of movements; track movement.id) {
           <tr>
             <td>{{ formatDate(movement.date) }}</td>
-            <td>{{ movement.type === 'ingreso' ? 'Ingreso' : 'Gasto' }}</td>
+            <td>{{ movement.type === 'INCOME' ? 'Ingreso' : 'Gasto' }}</td>
             <td class="wrap">{{ movement.description ?? '—' }}</td>
-            <td class="right" [style]="getAmountStyle(movement.amount)">{{ formatCurrency(movement.amount) }}</td>
+            <td class="right" [style]="getAmountStyle(movement.type)">{{ formatCurrency(movement.amount) }}</td>
           </tr>
         } @empty {
           <tr>

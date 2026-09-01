@@ -13,8 +13,9 @@ export class PeriodsNew implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly periodoService = inject(PeriodoService);
 
-  year = new Date().getFullYear();
-  month = new Date().getMonth() + 1;
+  name = '';
+  startDate = new Date().toISOString().split('T')[0];
+  endDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
   saveMessage = '';
   saving = false;
 
@@ -23,18 +24,24 @@ export class PeriodsNew implements OnInit {
   }
 
   async createPeriod(): Promise<void> {
+    if (!this.name) {
+      this.saveMessage = '✗ El nombre del período es obligatorio';
+      setTimeout(() => (this.saveMessage = ''), 3000);
+      return;
+    }
     this.saving = true;
     this.saveMessage = '';
     try {
-      await this.periodoService.create(this.year, this.month);
-      this.saveMessage = '✓ Período creado';
-      this.year = new Date().getFullYear();
-      this.month = new Date().getMonth() + 1;
+      await this.periodoService.create({ name: this.name, startDate: this.startDate, endDate: this.endDate });
+      this.saveMessage = '✓ Período creado y activado. Ya puedes registrar ingresos y gastos.';
+      this.name = '';
+      this.startDate = new Date().toISOString().split('T')[0];
+      this.endDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
     } catch (e: any) {
       this.saveMessage = '✗ ' + (e?.error?.error?.message ?? 'Error al crear período');
     } finally {
       this.saving = false;
-      setTimeout(() => (this.saveMessage = ''), 3000);
+      setTimeout(() => (this.saveMessage = ''), 4000);
     }
   }
 }

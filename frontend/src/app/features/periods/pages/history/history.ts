@@ -6,9 +6,10 @@ import { Periodo } from '../../../../core/models/api.models';
 
 interface PeriodoHistorial {
   id: string;
-  year: number;
-  month: number;
+  name: string;
+  range: string;
   status: string;
+  statusLabel: string;
   totalIngresos: number;
   totalGastos: number;
 }
@@ -46,9 +47,10 @@ export class PeriodsHistory implements OnInit {
 
         results.push({
           id: p.id,
-          year: p.year,
-          month: p.month,
-          status: p.isOpen ? 'Abierto' : 'Finalizado',
+          name: p.name,
+          range: `${this.formatDate(new Date(p.startDate))} — ${this.formatDate(new Date(p.endDate))}`,
+          status: p.status,
+          statusLabel: this.statusLabel(p.status),
           totalIngresos,
           totalGastos,
         });
@@ -64,8 +66,20 @@ export class PeriodsHistory implements OnInit {
     return 'Q ' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  getMonthName(month: number): string {
-    const names = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    return names[month] ?? '';
+  private formatDate(date: Date): string {
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+
+  private statusLabel(status: string): string {
+    switch (status) {
+      case 'DRAFT': return 'Borrador';
+      case 'ACTIVE': return 'Activo';
+      case 'FINISHED': return 'Finalizado';
+      case 'CANCELLED': return 'Cancelado';
+      default: return status;
+    }
   }
 }
