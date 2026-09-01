@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -9,10 +9,11 @@ import { AuthService } from '../../../../core/auth/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class Login implements OnInit {
+export class Login {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -23,14 +24,6 @@ export class Login implements OnInit {
   submitting = false;
   errorMessage = '';
   successMessage = '';
-  sessionExpiredMessage = '';
-
-  ngOnInit(): void {
-    if (this.authService.sessionExpired) {
-      this.sessionExpiredMessage = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
-      this.authService.sessionExpired = false;
-    }
-  }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
@@ -52,9 +45,11 @@ export class Login implements OnInit {
       await this.authService.login(email!, password!);
       await this.router.navigate(['/dashboard']);
     } catch (error: any) {
-      this.errorMessage = error?.error?.error?.message || 'Credenciales incorrectas. Intenta de nuevo.';
+      this.errorMessage = error?.error?.error?.message || 'Las credenciales son incorrectas. Inténtelo nuevamente.';
+      this.cdr.markForCheck();
     } finally {
       this.submitting = false;
+      this.cdr.markForCheck();
     }
   }
 }

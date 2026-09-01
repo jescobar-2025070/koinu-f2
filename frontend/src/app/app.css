@@ -265,7 +265,7 @@
 }
 
 .stat-value.cyan { color: var(--cyan); }
-.stat-value.green { color: var(--green); }
+.stat-value.green { color:  #79cd79; }
 
 /* ============================================================
    Responsive
@@ -321,4 +321,71 @@
   right: -30px;
   width: 260px;
   height: 260px;
+}
+
+/* ============================================================
+   Modal de sesión expirada
+   ============================================================ */
+
+.session-expired-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(9, 18, 31, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.session-expired-modal {
+  background: #16283d;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 36px 40px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.session-expired-icon {
+  font-size: 52px;
+  color: var(--amber, #ffc46b);
+}
+
+.session-expired-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.session-expired-text {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.session-expired-modal .btn-primary {
+  width: 100%;
+  max-width: 260px;
+  background: linear-gradient(135deg, #2f6fd6, #1e4f9e);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.session-expired-modal .btn-primary:hover {
+  filter: brightness(1.1);
 }
