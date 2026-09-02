@@ -12,12 +12,12 @@ import {
 } from '../../../../core/models/api.models';
 
 @Component({
-  selector: 'app-budget-main',
+  selector: 'app-objectives-budget',
   imports: [FormsModule],
   templateUrl: './budget.html',
   styleUrl: './budget.css',
 })
-export class BudgetMain implements OnInit {
+export class ObjectivesBudget implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly budgetService = inject(BudgetService);
   private readonly periodoService = inject(PeriodoService);
@@ -27,9 +27,6 @@ export class BudgetMain implements OnInit {
   periodos: Periodo[] = [];
   selectedPeriodId = '';
   budget: BudgetData | null = null;
-  totalInput = 0;
-  savingTotal = false;
-  msg = '';
 
   categoriasGasto: Categoria[] = [];
   allocationCategoryId = '';
@@ -41,7 +38,7 @@ export class BudgetMain implements OnInit {
   overrunsTotal = 0;
 
   ngOnInit(): void {
-    this.sidebarService.setDashboard();
+    this.sidebarService.setObjectives();
     this.loadPeriods();
   }
 
@@ -60,7 +57,6 @@ export class BudgetMain implements OnInit {
   selectPeriod(): void {
     this.budget = null;
     this.overruns = [];
-    this.msg = '';
     this.allocationMsg = '';
     void this.loadBudget();
   }
@@ -75,7 +71,6 @@ export class BudgetMain implements OnInit {
         this.budgetService.getOverruns(this.selectedPeriodId),
       ]);
       this.budget = budget;
-      this.totalInput = budget.presupuesto ? Number(budget.presupuesto.totalAmount) : 0;
       this.overrunsTotal = overruns.excedenteTotal;
       this.overruns = overruns.excedentes.map((e) => ({
         id: e.id,
@@ -93,30 +88,14 @@ export class BudgetMain implements OnInit {
     return p?.status === 'ACTIVE' || p?.status === 'DRAFT';
   }
 
-  async saveTotal(): Promise<void> {
-    if (this.totalInput < 0 || !this.selectedPeriodId) {
-      return;
-    }
-    this.savingTotal = true;
-    this.msg = '';
-    try {
-      if (this.budget?.presupuesto) {
-        await this.budgetService.updateBudget(this.selectedPeriodId, this.totalInput);
-      } else {
-        await this.budgetService.createBudget(this.selectedPeriodId, this.totalInput);
-      }
-      this.msg = 'Presupuesto guardado correctamente.';
-      await this.loadBudget();
-    } catch (e: any) {
-      this.msg = e?.error?.error?.message || 'No se pudo guardar el presupuesto.';
-    } finally {
-      this.savingTotal = false;
-      this.cdr.markForCheck();
-    }
-  }
-
   getCategoryName(id: string): string {
     return this.categoriasGasto.find((c) => c.id === id)?.name ?? '—';
+  }
+
+  totalDisponible(): number {
+    return this.budget && this.budget.presupuesto
+      ? Number(this.budget.presupuesto.totalAmount) - this.budget.asignadoTotal
+      : 0;
   }
 
   async addAllocation(): Promise<void> {
@@ -127,7 +106,11 @@ export class BudgetMain implements OnInit {
     this.savingAllocation = true;
     this.allocationMsg = '';
     try {
-      await this.budgetService.createAllocation(this.selectedPeriodId, this.allocationCategoryId, this.allocationAmount);
+      await this.budgetService.createAllocation(
+        this.selectedPeriodId,
+        this.allocationCategoryId,
+        this.allocationAmount,
+      );
       this.allocationAmount = 0;
       this.allocationMsg = 'Asignación registrada.';
       await this.loadBudget();
@@ -165,7 +148,9 @@ export class BudgetMain implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    return 'Q ' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (
+      'Q ' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    );
   }
 
   formatDate(dateStr: string): string {

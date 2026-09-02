@@ -30,34 +30,6 @@ export class BudgetController {
     }
   };
 
-  createBudget = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = this.requireUser(req);
-      const presupuesto = await this.budgetService.createBudget(
-        req.params.periodId,
-        userId,
-        req.body.totalAmount,
-      );
-      res.status(201).json({ presupuesto });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  updateBudget = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = this.requireUser(req);
-      const presupuesto = await this.budgetService.updateBudget(
-        req.params.periodId,
-        userId,
-        req.body.totalAmount,
-      );
-      res.status(200).json({ presupuesto });
-    } catch (error) {
-      next(error);
-    }
-  };
-
   listAllocations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = this.requireUser(req);

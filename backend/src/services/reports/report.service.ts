@@ -151,9 +151,9 @@ export class ReportService {
       const asignado = asignaciones.reduce((s, a) => s + Number(a.amount), 0);
       excedente = await excedenteRepo.findTotalByPresupuesto(presupuesto.id);
       presupuestoInfo = {
-        total: Number(presupuesto.totalAmount),
+        total: totalIngresos,
         asignado,
-        disponible: Math.max(0, Number(presupuesto.totalAmount) - totalGastos),
+        disponible: Math.max(0, totalIngresos - totalGastos),
         excedente: Number(excedente),
       };
     }

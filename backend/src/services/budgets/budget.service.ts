@@ -24,6 +24,7 @@ export class BudgetService {
   private readonly asignacionRepository: AsignacionPresupuestoRepository;
   private readonly excedenteRepository: ExcedentePresupuestoRepository;
   private readonly categoriaGastoRepository: CategoriaGastoRepository;
+  private readonly movimientoRepository: MovimientoRepository;
 
   constructor() {
     this.periodoService = new PeriodoService();
@@ -31,15 +32,22 @@ export class BudgetService {
     this.asignacionRepository = new AsignacionPresupuestoRepository(pool);
     this.excedenteRepository = new ExcedentePresupuestoRepository(pool);
     this.categoriaGastoRepository = new CategoriaGastoRepository(pool);
+    this.movimientoRepository = new MovimientoRepository(pool);
   }
 
   async getBudget(periodoId: string, userId: string): Promise<PresupuestoConAsignaciones> {
-    const presupuesto = await this.presupuestoRepository.findByPeriodo(periodoId);
     await this.assertPeriodOwnership(periodoId, userId);
 
+    let presupuesto = await this.presupuestoRepository.findByPeriodo(periodoId);
+    const totalAmount = await this.netIncomeOf(periodoId);
+
     if (!presupuesto) {
-      return { presupuesto: null, asignaciones: [], asignadoTotal: 0, excedenteTotal: 0 };
+      presupuesto = await this.presupuestoRepository.create({
+        periodoId,
+        totalAmount,
+      });
     }
+    presupuesto.totalAmount = totalAmount;
 
     const asignaciones = await this.asignacionRepository.findByPresupuesto(presupuesto.id);
     const asignadoTotal = asignaciones.reduce((sum, a) => sum + Number(a.amount), 0);
@@ -53,62 +61,9 @@ export class BudgetService {
     };
   }
 
-  async createBudget(periodoId: string, userId: string, totalAmount: number): Promise<Presupuesto> {
-    await this.assertPeriodOwnership(periodoId, userId);
-
-    const existing = await this.presupuestoRepository.findByPeriodo(periodoId);
-    if (existing) {
-      throw new AppError(ErrorCodes.BUDGET_ALREADY_EXISTS, {
-        message: 'Este período ya tiene un presupuesto definido.',
-        statusCode: 409,
-      });
-    }
-
-    if (typeof totalAmount !== 'number' || isNaN(totalAmount) || totalAmount < 0) {
-      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: 'El presupuesto total debe ser un número mayor o igual a 0.',
-        statusCode: 400,
-      });
-    }
-
-    return this.presupuestoRepository.create({ periodoId, totalAmount });
-  }
-
-  async updateBudget(periodoId: string, userId: string, totalAmount: number): Promise<Presupuesto> {
-    await this.assertPeriodOwnership(periodoId, userId);
-
-    const presupuesto = await this.presupuestoRepository.findByPeriodo(periodoId);
-    if (!presupuesto) {
-      throw new AppError(ErrorCodes.BUDGET_NOT_FOUND, {
-        message: 'El período no tiene un presupuesto definido.',
-        statusCode: 404,
-      });
-    }
-
-    if (typeof totalAmount !== 'number' || isNaN(totalAmount) || totalAmount < 0) {
-      throw new AppError(ErrorCodes.VALIDATION_ERROR, {
-        message: 'El presupuesto total debe ser un número mayor o igual a 0.',
-        statusCode: 400,
-      });
-    }
-
-    const asignaciones = await this.asignacionRepository.findByPresupuesto(presupuesto.id);
-    const asignadoTotal = asignaciones.reduce((sum, a) => sum + Number(a.amount), 0);
-    if (asignadoTotal > totalAmount) {
-      throw new AppError(ErrorCodes.BUDGET_ALLOCATION_EXCEEDS_TOTAL, {
-        message: 'No se puede reducir el presupuesto por debajo del total ya asignado.',
-        statusCode: 422,
-      });
-    }
-
-    const updated = await this.presupuestoRepository.update(presupuesto.id, totalAmount);
-    if (!updated) {
-      throw new AppError(ErrorCodes.INTERNAL_ERROR, {
-        message: 'Error al actualizar el presupuesto.',
-        statusCode: 500,
-      });
-    }
-    return updated;
+  private async netIncomeOf(periodoId: string): Promise<number> {
+    const stats = await this.movimientoRepository.getStatsByPeriodo(periodoId);
+    return Number(stats.totalIngresos);
   }
 
   async listAllocations(periodoId: string, userId: string): Promise<AsignacionPresupuesto[]> {
@@ -159,7 +114,8 @@ export class BudgetService {
         (existingForCategoria ? Number(existingForCategoria.amount) : 0) +
         amount;
 
-      if (totalAsignado > Number(presupuesto.totalAmount)) {
+      const totalDisponible = await this.netIncomeOf(periodoId);
+      if (totalAsignado > totalDisponible) {
         throw new AppError(ErrorCodes.BUDGET_ALLOCATION_EXCEEDS_TOTAL, {
           message: 'La suma de asignaciones no puede superar el presupuesto total.',
           statusCode: 422,
@@ -207,7 +163,8 @@ export class BudgetService {
         Number(asignacion.amount) +
         amount;
 
-      if (total > Number(presupuesto.totalAmount)) {
+      const totalDisponible = await this.netIncomeOf(presupuesto.periodoId);
+      if (total > totalDisponible) {
         throw new AppError(ErrorCodes.BUDGET_ALLOCATION_EXCEEDS_TOTAL, {
           message: 'La suma de asignaciones no puede superar el presupuesto total.',
           statusCode: 422,
@@ -294,7 +251,7 @@ export class BudgetService {
     const sobrepasoPrevio = excedentes.reduce((sum, e) => sum + Number(e.amount), 0);
     const incremento = Math.max(
       0,
-      stats.totalGastos - Number(presupuesto.totalAmount) - sobrepasoPrevio,
+      stats.totalGastos - Number(stats.totalIngresos) - sobrepasoPrevio,
     );
 
     if (incremento <= 0) {

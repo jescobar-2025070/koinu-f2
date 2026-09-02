@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { BudgetController } from '../controllers/budget.controller';
 import { authenticate } from '../middleware/authenticate';
 import { validate } from '../middleware/validate';
-import { validateUpsertBudgetRequest } from '../validators/budgets/upsert-budget.validator';
 import {
   validateAllocationRequest,
   validateUpdateAllocationRequest,
@@ -13,8 +12,6 @@ export function budgetRouter(): Router {
   const controller = new BudgetController();
 
   router.get('/:periodId/budget', authenticate, controller.getBudget);
-  router.post('/:periodId/budget', authenticate, validate(validateUpsertBudgetRequest), controller.createBudget);
-  router.patch('/:periodId/budget', authenticate, validate(validateUpsertBudgetRequest), controller.updateBudget);
 
   router.get('/:periodId/budget/allocations', authenticate, controller.listAllocations);
   router.post('/:periodId/budget/allocations', authenticate, validate(validateAllocationRequest), controller.createAllocation);

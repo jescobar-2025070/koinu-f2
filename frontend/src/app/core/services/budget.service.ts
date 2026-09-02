@@ -11,14 +11,6 @@ export class BudgetService {
     return await firstValueFrom(this.api.get<BudgetData>(`/periods/${periodoId}/budget`));
   }
 
-  async createBudget(periodoId: string, totalAmount: number): Promise<void> {
-    await firstValueFrom(this.api.post(`/periods/${periodoId}/budget`, { totalAmount }));
-  }
-
-  async updateBudget(periodoId: string, totalAmount: number): Promise<void> {
-    await firstValueFrom(this.api.patch(`/periods/${periodoId}/budget`, { totalAmount }));
-  }
-
   async createAllocation(periodoId: string, categoriaGastoId: string, amount: number): Promise<AsignacionPresupuesto> {
     return await firstValueFrom(
       this.api.post<AsignacionPresupuesto>(`/periods/${periodoId}/budget/allocations`, {

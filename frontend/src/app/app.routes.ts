@@ -124,13 +124,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/objectives/pages/main/main').then((m) => m.ObjectivesMain),
   },
-  // Budget routes
   {
-    path: 'budget',
+    path: 'objectives/budget',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/budget/pages/main/budget').then((m) => m.BudgetMain),
+      import('./features/objectives/pages/budget/budget').then((m) => m.ObjectivesBudget),
   },
+  // Budget moved into Objectives; keep old URL as a redirect
+  { path: 'budget', redirectTo: 'objectives' },
   // Admin routes
   {
     path: 'admin',

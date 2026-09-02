@@ -66,11 +66,10 @@
   color: var(--text-dim2);
 }
 
-.total-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
+.budget-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim2);
+  margin-bottom: 6px;
 }
 
 .allocation-form {

@@ -45,3 +45,8 @@ src/
 ├── app.ts
 └── server.ts
 ```
+
+> **Presupuesto:** el total del presupuesto de un período **se calcula automáticamente** con los ingresos
+> netos del período (`GET /periods/:periodId/budget` lo auto-crea y devuelve `totalAmount` = `totalIngresos`
+> en vivo). No existen endpoints para editar el total; solo se asignan porciones del presupuesto a categorías
+> de gasto (los excedentes se registran cuando los gastos superan los ingresos netos).

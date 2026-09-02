@@ -9,7 +9,7 @@ Plataforma web de **gestión de finanzas personales por periodos**.
 - **Objetivo:** Desarrollar un MVP funcional, testeable, mantenible y auditable. La administración está estrictamente separada de la información financiera personal (el `ADMIN` no puede consultar las finanzas de los usuarios).
 - **Problema que resuelve:** Permitir que una persona administre manualmente sus finanzas personales, obtenga información organizada y reciba recomendaciones básicas, sin realizar operaciones financieras externas.
 - **Estado actual del desarrollo:** Fase 3 completa.
-- **Alcance actual:** Autenticación completa (login/registro, refresh token rotativo, forgot/reset password), módulos de negocio (períodos con estados y activación, movimientos con tratamiento fiscal, objetivos, categorías separadas por usuario, presupuestos por período con asignaciones y excedentes), dashboard con estadísticas y recomendaciones, informes preliminares/finales, panel de administración de usuarios, frontend integrado con backend en tiempo real, diseño glassmorphism con SVG decorativos.
+- **Alcance actual:** Autenticación completa (login/registro, refresh token rotativo, forgot/reset password), módulos de negocio (períodos con estados y activación, movimientos con tratamiento fiscal, objetivos, categorías separadas por usuario, presupuestos por período integrados en OBJETIVOS con total automático de ingresos netos, asignaciones por categoría y excedentes), dashboard con estadísticas y recomendaciones, informes preliminares/finales, panel de administración de usuarios, frontend integrado con backend en tiempo real, diseño glassmorphism con SVG decorativos.
 
 ## Tecnologías
 
@@ -68,7 +68,7 @@ Con middleware de:
 ### Frontend
 
 - **Core:** servicios de API, servicio de autenticación (estado con signals), guards, interceptors y modelos.
-- **Features:** módulos funcionales (auth, dashboard, periods, movements, objectives, budget, admin). Las rutas se cargan con *lazy loading*.
+- **Features:** módulos funcionales (auth, dashboard, periods, movements, objectives, admin). Las rutas se cargan con *lazy loading*.
 - **Diseño:** Glassmorphism con gradientes, tubos SVG decorativos, sidebar dinámica, topbar tipo pill.
 
 ### Autenticación
@@ -133,8 +133,7 @@ finanzas/
 │           │   ├── dashboard/     # dashboard + sub-páginas (movimientos, ingresos, gastos, informes)
 │           │   ├── periods/       # overview, new, edit, finalize, history
 │           │   ├── movements/     # income, expenses, history-income, history-expenses
-│           │   ├── objectives/    # página principal (funcional)
-│           │   ├── budget/        # presupuesto por período (total, asignaciones, excedentes)
+│           │   ├── objectives/    # página principal + subpágina de presupuesto (total auto, asignaciones, excedentes)
 │           │   └── admin/         # panel admin de usuarios (solo ADMIN)
 │           ├── app.routes.ts      # Todas las rutas con lazy loading
 │           ├── app.config.ts      # Bootstrap con providers
@@ -304,9 +303,9 @@ Tras ejecutar `pnpm seed:full`:
 - [x] Objetivos ligados a período con contribuciones, retiros, completado/cancelación y fechas (migración 016, `/objectives` + `/objectives/:id/*`).
 - [x] Autenticación avanzada: refresh token rotativo (migración 004/repositorio de tokens) y forgot/reset password (migración 017).
 - [x] Panel de administración de usuarios para rol `ADMIN`: listar, activar/desactivar, asignar roles (mínimo uno) y eliminar usuarios (`/users`, `/system/health`).
-- [x] Frontend: página de presupuesto, página admin, páginas forgot/reset password, menú DASHBOARD/OBJETIVOS/PRESUPUESTO/ADMIN (visible con rol `ADMIN`).
+- [x] Frontend: página de presupuesto integrada en OBJETIVOS (total automático, asignaciones y excedentes), página admin, páginas forgot/reset password, menú DASHBOARD/OBJETIVOS/ADMIN (visible con rol `ADMIN`).
 - [x] Pruebas backend de Fase 3 (roles/administración de usuarios, auth avanzada) — 36 casos en total.
-- [x] Pruebas frontend con `vitest` (40 casos): ApiService, AuthService, guards y páginas de presupuesto y admin.
+- [x] Pruebas frontend con `vitest` (41 casos): ApiService, AuthService, guards y páginas de presupuesto y admin.
 
 ### Pendiente
 
@@ -351,11 +350,11 @@ Base: `http://localhost:3000/api/v1`
 
 ### Presupuestos
 
+> El presupuesto se integra con OBJETIVOS. Su **total se calcula automáticamente** como los ingresos netos del período (no es editable); solo se asigna porciones del total a categorías de gasto. El presupuesto del período se crea automáticamente al consultarlo.
+
 | Método | Ruta | Auth | Descripción |
 | --- | --- | --- | --- |
-| `GET` | `/periods/:periodId/budget` | Sí | Presupuesto del período + asignaciones y excedentes calculados |
-| `POST` | `/periods/:periodId/budget` | Sí | Crear presupuesto (`totalAmount`) |
-| `PATCH` | `/periods/:periodId/budget` | Sí | Actualizar total del presupuesto |
+| `GET` | `/periods/:periodId/budget` | Sí | Presupuesto del período (total = ingresos netos) + asignaciones y excedentes calculados |
 | `GET` | `/periods/:periodId/budget/allocations` | Sí | Listar asignaciones por categoría |
 | `POST` | `/periods/:periodId/budget/allocations` | Sí | Crear asignación (`categoriaGastoId`, `amount`) |
 | `PATCH` | `/periods/budget-allocations/:id` | Sí | Actualizar monto de asignación |
@@ -497,7 +496,7 @@ El backend calcula el monto neto (`net = gross - retention`) y lo guarda en `mov
 ### Frontend
 
 - Framework: `vitest` integrado por Angular CLI (`@angular/build:unit-test`). Ejecutar con `pnpm test` en `frontend/`.
-- Cobertura (40 casos): ApiService (métodos y URLs), AuthService (login, refresh token rotativo, logout, sesión restaurada/expirada), guards `auth` y `admin` (acceso y redirecciones), página de presupuesto (carga, guardar/actualizar total, asignaciones, formateo) y página admin (carga, auto-protección de la propia cuenta, roles con mínimo uno, activar/desactivar y eliminar).
+- Cobertura (41 casos): ApiService (métodos y URLs), AuthService (login, refresh token rotativo, logout, sesión restaurada/expirada), guards `auth` y `admin` (acceso y redirecciones), página de presupuesto en OBJETIVOS (carga con total automático, sin edición del total, asignaciones, formateo) y página admin (carga, auto-protección de la propia cuenta, roles con mínimo uno, activar/desactivar y eliminar).
 
 ## Seguridad
 
@@ -576,7 +575,8 @@ El backend calcula el monto neto (`net = gross - retention`) y lo guarda en `mov
 | `/movements/history/income` | Historial ingresos | Tabla con botón editar |
 | `/movements/history/expenses` | Historial gastos | Tabla con botón eliminar |
 | `/objectives` | Objetivos | Lista de objetivos con progreso, contribuciones y retiros |
-| `/budget` | Presupuesto | Total por período, asignaciones por categoría y excedentes |
+| `/objectives/budget` | Presupuesto | Total por período (automático = ingresos netos), asignaciones por categoría y excedentes |
+| `/budget` | → `/objectives` | Redirige a OBJETIVOS (URL antigua del presupuesto) |
 | `/admin` | Administración | Gestión de usuarios (roles, estado, eliminación) y salud del sistema |
 | `/forgot-password` | Recuperar contraseña | Envío de enlace/token de reset |
 | `/reset-password` | Nueva contraseña | Fija la nueva contraseña con el token recibido |
@@ -670,14 +670,15 @@ Etapa 3: COMPLETADA
 
 Fase 3: COMPLETADA
 - Presupuestos por período (totales, asignaciones por categoría, excedentes) — migraciones 012-014.
+- Presupuesto integrado en OBJETIVOS: total automático = ingresos netos del período (no editable) y solo asignaciones por categoría.
 - Dashboard v2 (disponible por ingresos y por presupuesto, recomendaciones).
 - Informes preliminares/finales con snapshots — migración 015.
 - Objetivos por período con contribuciones, retiros, completo/cancelación — migración 016.
 - Autenticación avanzada: refresh token rotativo y forgot/reset password — migraciones 004 (repositorio) y 017.
 - Panel ADMIN de usuarios (roles, activo/desactivado, eliminación) y `/system/health`.
-- Frontend: páginas de presupuesto, admin, forgot/reset password; menú DASHBOARD/OBJETIVOS/PRESUPUESTO/ADMIN.
+- Frontend: páginas admin, forgot/reset password; presupuesto dentro de OBJETIVOS; menú DASHBOARD/OBJETIVOS/ADMIN.
 - Pruebas backend de Fase 3 — 36 casos en total.
-- Pruebas frontend con vitest — 40 casos (servicios core, guards, presupuesto, admin).
+- Pruebas frontend con vitest — 41 casos (servicios core, guards, presupuesto, admin).
 
 Pendiente:
 - Pruebas E2E y casos restantes del frontend.

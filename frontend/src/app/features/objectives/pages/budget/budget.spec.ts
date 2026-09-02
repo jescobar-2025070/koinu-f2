@@ -1,6 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { BudgetMain } from './budget';
+import { ObjectivesBudget } from './budget';
 import { BudgetService } from '../../../../core/services/budget.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
 import { CategoriaService } from '../../../../core/services/categoria.service';
@@ -78,9 +78,9 @@ const overruns: OverrunsData = {
   ],
 };
 
-describe('BudgetMain', () => {
-  let fixture: ComponentFixture<BudgetMain>;
-  let component: BudgetMain;
+describe('ObjectivesBudget', () => {
+  let fixture: ComponentFixture<ObjectivesBudget>;
+  let component: ObjectivesBudget;
   let budgetService: Mock<BudgetService>;
   let periodoService: Mock<PeriodoService>;
   let categoriaService: Mock<CategoriaService>;
@@ -89,8 +89,6 @@ describe('BudgetMain', () => {
   beforeEach(() => {
     budgetService = {
       getBudget: vi.fn(),
-      createBudget: vi.fn(),
-      updateBudget: vi.fn(),
       createAllocation: vi.fn(),
       updateAllocation: vi.fn(),
       deleteAllocation: vi.fn(),
@@ -98,10 +96,10 @@ describe('BudgetMain', () => {
     };
     periodoService = { list: vi.fn() } as Mock<PeriodoService>;
     categoriaService = { listExpense: vi.fn() } as Mock<CategoriaService>;
-    sidebarService = { setDashboard: vi.fn() } as Mock<SidebarService>;
+    sidebarService = { setObjectives: vi.fn() } as Mock<SidebarService>;
 
     TestBed.configureTestingModule({
-      imports: [BudgetMain],
+      imports: [ObjectivesBudget],
       providers: [
         provideZonelessChangeDetection(),
         { provide: BudgetService, useValue: budgetService },
@@ -111,11 +109,11 @@ describe('BudgetMain', () => {
       ],
     });
 
-    fixture = TestBed.createComponent(BudgetMain);
+    fixture = TestBed.createComponent(ObjectivesBudget);
     component = fixture.componentInstance;
   });
 
-  it('carga períodos, activa el período ACTIVE y renderiza el presupuesto', async () => {
+  it('carga períodos, activa el período ACTIVE y renderiza el total calculado', async () => {
     periodoService.list.mockResolvedValue([periodo]);
     categoriaService.listExpense.mockResolvedValue([categoria]);
     budgetService.getBudget.mockResolvedValue(budgetData);
@@ -127,13 +125,29 @@ describe('BudgetMain', () => {
     expect(component.periodos).toEqual([periodo]);
     expect(component.selectedPeriodId).toBe('p-1');
     expect(component.budget).toEqual(budgetData);
-    expect(sidebarService.setDashboard).toHaveBeenCalled();
+    expect(sidebarService.setObjectives).toHaveBeenCalled();
 
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Enero 2026');
     expect(text).toContain('Q 5,000.00');
-    expect(text).toContain('Actualizar Presupuesto');
+    expect(text).toContain('Total (ingresos netos):');
+  });
+
+  it('no ofrece edición del total del presupuesto', async () => {
+    periodoService.list.mockResolvedValue([periodo]);
+    categoriaService.listExpense.mockResolvedValue([categoria]);
+    budgetService.getBudget.mockResolvedValue(budgetData);
+    budgetService.getOverruns.mockResolvedValue({ excedenteTotal: 0, excedentes: [] });
+
+    fixture.detectChanges();
+    await settle();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Actualizar Presupuesto');
+    expect(text).not.toContain('Definir Presupuesto');
+    expect(budgetService.createAllocation).not.toHaveBeenCalled();
   });
 
   it('muestra el mensaje vacío cuando no hay períodos', async () => {
@@ -144,43 +158,8 @@ describe('BudgetMain', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Primero crea un período para poder definir un presupuesto.');
+    expect(text).toContain('Primero crea un período para asignar un presupuesto.');
     expect(budgetService.getBudget).not.toHaveBeenCalled();
-  });
-
-  it('saveTotal crea el presupuesto cuando aún no existe', async () => {
-    periodoService.list.mockResolvedValue([periodo]);
-    categoriaService.listExpense.mockResolvedValue([]);
-    budgetService.getBudget.mockResolvedValue(noBudget);
-    budgetService.getOverruns.mockResolvedValue({ excedenteTotal: 0, excedentes: [] });
-    budgetService.createBudget.mockResolvedValue(undefined);
-
-    fixture.detectChanges();
-    await settle();
-
-    component.totalInput = 3000;
-    await component.saveTotal();
-
-    expect(budgetService.createBudget).toHaveBeenCalledWith('p-1', 3000);
-    expect(budgetService.updateBudget).not.toHaveBeenCalled();
-    expect(component.msg).toBe('Presupuesto guardado correctamente.');
-  });
-
-  it('saveTotal actualiza el presupuesto cuando ya existe', async () => {
-    periodoService.list.mockResolvedValue([periodo]);
-    categoriaService.listExpense.mockResolvedValue([]);
-    budgetService.getBudget.mockResolvedValue(budgetData);
-    budgetService.getOverruns.mockResolvedValue({ excedenteTotal: 0, excedentes: [] });
-    budgetService.updateBudget.mockResolvedValue(undefined);
-
-    fixture.detectChanges();
-    await settle();
-
-    component.totalInput = 6000;
-    await component.saveTotal();
-
-    expect(budgetService.updateBudget).toHaveBeenCalledWith('p-1', 6000);
-    expect(budgetService.createBudget).not.toHaveBeenCalled();
   });
 
   it('isActivePeriod es true para ACTIVE y DRAFT, false para FINISHED', () => {
@@ -227,6 +206,25 @@ describe('BudgetMain', () => {
     expect(budgetService.createAllocation).toHaveBeenCalledWith('p-1', 'c-1', 1500);
     expect(component.allocationMsg).toBe('Asignación registrada.');
     expect(component.allocationAmount).toBe(0);
+  });
+
+  it('deleteAllocation elimina la asignación', async () => {
+    budgetService.deleteAllocation.mockResolvedValue(undefined);
+    budgetService.getBudget.mockResolvedValue(budgetData);
+    budgetService.getOverruns.mockResolvedValue(overruns);
+    const allocation: AsignacionPresupuesto = budgetData.asignaciones[0];
+
+    await component.deleteAllocation(allocation);
+
+    expect(budgetService.deleteAllocation).toHaveBeenCalledWith('a-1');
+  });
+
+  it('totalDisponible es total menos asignado', () => {
+    component.budget = budgetData;
+    expect(component.totalDisponible()).toBe(3000);
+
+    component.budget = noBudget;
+    expect(component.totalDisponible()).toBe(0);
   });
 
   it('getCategoryName devuelve el nombre o un guion', () => {

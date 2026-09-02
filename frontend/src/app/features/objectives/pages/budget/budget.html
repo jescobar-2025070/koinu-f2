@@ -2,7 +2,7 @@
   <div class="section-title">PRESUPUESTO</div>
 
   @if (periodos.length === 0) {
-    <div class="budget-empty">Primero crea un período para poder definir un presupuesto.</div>
+    <div class="budget-empty">Primero crea un período para asignar un presupuesto.</div>
   } @else {
     <div class="budget-toolbar">
       <div class="form-field" style="min-width: 260px;">
@@ -16,25 +16,16 @@
     </div>
 
     <div class="panel">
-      <div class="panel-title">PRESUPUESTO TOTAL</div>
+      <div class="panel-title">PRESUPUESTO DEL PERÍODO</div>
       @if (budget?.presupuesto) {
         <div class="budget-status">
-          <span>Total definido:</span>
+          <span>Total (ingresos netos):</span>
           <strong>{{ formatCurrency(budget!.presupuesto!.totalAmount) }}</strong>
         </div>
+        <div class="budget-hint">El total se calcula automáticamente con los ingresos netos del período. Solo puedes asignar porciones del presupuesto a cada categoría de gasto.</div>
       } @else {
-        <div class="budget-status dim">Este período aún no tiene presupuesto definido.</div>
+        <div class="budget-status dim">Cargando presupuesto…</div>
       }
-      <div class="total-row">
-        <div class="form-field" style="max-width: 260px;">
-          <label>MONTO (Q)</label>
-          <input type="number" step="0.01" min="0" class="glow-pill" [(ngModel)]="totalInput">
-        </div>
-        <button class="btn-primary" (click)="saveTotal()" [disabled]="savingTotal || !isActivePeriod()">
-          {{ budget?.presupuesto ? 'Actualizar Presupuesto' : 'Definir Presupuesto' }}
-        </button>
-      </div>
-      <div class="save-msg">{{ msg }}</div>
     </div>
 
     @if (budget?.presupuesto) {
@@ -47,7 +38,7 @@
           </div>
           <div class="summary-item">
             <span class="stat-label">PENDIENTE</span>
-            <span class="stat-value">{{ formatCurrency(budget!.presupuesto!.totalAmount - budget!.asignadoTotal) }}</span>
+            <span class="stat-value">{{ formatCurrency(totalDisponible()) }}</span>
           </div>
           <div class="summary-item">
             <span class="stat-label">EXCEDENTE</span>
