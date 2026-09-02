@@ -15,7 +15,16 @@ export class App implements OnInit {
   private readonly router = inject(Router);
 
   ngOnInit(): void {
-    void this.authService.ensureInitialized();
+    void this.authService.ensureInitialized().then(() => {
+      if (this.authService.isAuthenticated() && this.isPublicRoute(this.router.url)) {
+        void this.router.navigate(['/dashboard']);
+      }
+    });
+  }
+
+  private isPublicRoute(url: string): boolean {
+    const path = url.split('?')[0];
+    return path === '' || path === '/' || path === '/login';
   }
 
   goToLogin(): void {

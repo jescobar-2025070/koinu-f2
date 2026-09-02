@@ -1,4 +1,8 @@
-@if (authService.isAuthenticated()) {
+@if (authService.status() === 'checking') {
+  <div class="app-loading">
+    <div class="spinner"></div>
+  </div>
+} @else if (authService.isAuthenticated()) {
   <div class="app-view">
     <!-- Decorative SVG tubes -->
     <svg class="deco deco-tube-left" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
