@@ -56,10 +56,25 @@ button { font-family: inherit; cursor: pointer; }
 ::selection { background: rgba(0, 229, 255, 0.35); }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 6px; }
 
-/* scrollbar */
-.scroll-y::-webkit-scrollbar { width: 6px; }
-.scroll-y::-webkit-scrollbar-track { background: transparent; }
-.scroll-y::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 10px; }
+/* scrollbar — thin & transparent for all scrollable areas */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.22); border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.34); }
+
+select.glow-pill option,
+select option {
+  background-color: #0f2035;
+  color: #fff;
+}
+select option:checked {
+  background-color: #16365c;
+}
 
 .hidden { display: none !important; }
 

@@ -1,10 +1,22 @@
 /* Periodos overview */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
 .grid-2x2-top {
   display: grid;
   grid-template-columns: 1fr 1fr;
   row-gap: 36px;
   column-gap: 24px;
   margin-bottom: 40px;
+}
+
+.grid-2x2-top > * {
+  min-width: 0;
 }
 
 .stat-value.periodos {
@@ -20,7 +32,8 @@
 
 .chart-legend {
   display: flex;
-  gap: 26px;
+  flex-wrap: wrap;
+  gap: 12px 26px;
   margin-bottom: 18px;
   font-size: 0.8rem;
   color: var(--text-dim2);
@@ -61,10 +74,11 @@
 
 .chart-bars {
   flex: 1;
+  min-width: 0;
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 26px;
+  gap: clamp(10px, 2.4vw, 26px);
   padding-left: 6px;
 }
 
@@ -142,9 +156,10 @@
 
 .draft-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 12px 18px;
   padding: 16px 20px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 18px;
@@ -157,6 +172,7 @@
   align-items: flex-start;
   gap: 4px;
   text-align: left;
+  min-width: 0;
 }
 
 .draft-name {
