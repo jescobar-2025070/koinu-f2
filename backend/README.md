@@ -1,12 +1,12 @@
 # Finanzas Backend
 
-API REST del sistema de gestión de finanzas personales (Etapa 1: autenticación).
+API REST del sistema de gestión de finanzas personales (Etapa 1 a Fase 3).
 
 ## Stack
 
 - Node.js 22 · TypeScript · Express 4
 - PostgreSQL (driver `pg`) con migraciones SQL versionadas
-- JWT en cookie HttpOnly · bcryptjs · helmet · cors
+- JWT en cookie HttpOnly + refresh tokens rotativos · bcryptjs · helmet · cors
 
 ## Scripts
 
@@ -16,9 +16,10 @@ API REST del sistema de gestión de finanzas personales (Etapa 1: autenticación
 | `pnpm build` | Compilación TypeScript a `dist/` |
 | `pnpm start` | Ejecuta el build compilado |
 | `pnpm typecheck` | Verificación de tipos |
-| `pnpm migrate` | Aplica las migraciones pendientes |
+| `pnpm migrate` | Aplica las migraciones pendientes (001-017) |
 | `pnpm seed` | Crea el administrador inicial (usa `ADMIN_EMAIL`/`ADMIN_PASSWORD`) |
-| `pnpm test` | Ejecuta la suite de pruebas contra `finanzas_test` |
+| `pnpm seed:full` | Crea datos de prueba completos |
+| `pnpm test` | Ejecuta la suite de pruebas (36 casos) contra `finanzas_test` |
 
 ## Configuración
 
@@ -35,11 +36,11 @@ src/
 ├── errors/         # AppError + catálogo de códigos
 ├── middleware/     # authenticate, authorize, validate, error-handler
 ├── repositories/   # persistencia
-├── routes/         # rutas REST
-├── services/       # lógica de negocio
+├── routes/         # rutas REST (incluye budget, report, user, system)
+├── services/       # lógica de negocio (incluye budgets, reports)
 ├── validators/     # validación de entrada
 ├── mappers/        # entidad → DTO
-├── utils/          # jwt, passwords, cookies, migraciones
+├── utils/          # jwt, passwords, cookies, tokens, migraciones
 ├── types/          # extensiones de tipos
 ├── app.ts
 └── server.ts

@@ -306,10 +306,11 @@ Tras ejecutar `pnpm seed:full`:
 - [x] Panel de administración de usuarios para rol `ADMIN`: listar, activar/desactivar, asignar roles (mínimo uno) y eliminar usuarios (`/users`, `/system/health`).
 - [x] Frontend: página de presupuesto, página admin, páginas forgot/reset password, menú DASHBOARD/OBJETIVOS/PRESUPUESTO/ADMIN (visible con rol `ADMIN`).
 - [x] Pruebas backend de Fase 3 (roles/administración de usuarios, auth avanzada) — 36 casos en total.
+- [x] Pruebas frontend con `vitest` (40 casos): ApiService, AuthService, guards y páginas de presupuesto y admin.
 
 ### Pendiente
 
-- [ ] Pruebas frontend (vitest).
+- [ ] (_a desarrollar_) Pruebas E2E y casos restantes del frontend.
 
 ## API
 
@@ -495,8 +496,8 @@ El backend calcula el monto neto (`net = gross - retention`) y lo guarda en `mov
 
 ### Frontend
 
-- `vitest` configurado por Angular CLI. `pnpm test` en `frontend/`.
-- Estado actual: sin casos adicionales (los flujos críticos se prueban en el backend).
+- Framework: `vitest` integrado por Angular CLI (`@angular/build:unit-test`). Ejecutar con `pnpm test` en `frontend/`.
+- Cobertura (40 casos): ApiService (métodos y URLs), AuthService (login, refresh token rotativo, logout, sesión restaurada/expirada), guards `auth` y `admin` (acceso y redirecciones), página de presupuesto (carga, guardar/actualizar total, asignaciones, formateo) y página admin (carga, auto-protección de la propia cuenta, roles con mínimo uno, activar/desactivar y eliminar).
 
 ## Seguridad
 
@@ -676,7 +677,8 @@ Fase 3: COMPLETADA
 - Panel ADMIN de usuarios (roles, activo/desactivado, eliminación) y `/system/health`.
 - Frontend: páginas de presupuesto, admin, forgot/reset password; menú DASHBOARD/OBJETIVOS/PRESUPUESTO/ADMIN.
 - Pruebas backend de Fase 3 — 36 casos en total.
+- Pruebas frontend con vitest — 40 casos (servicios core, guards, presupuesto, admin).
 
 Pendiente:
-- Pruebas frontend (vitest).
+- Pruebas E2E y casos restantes del frontend.
 ```
