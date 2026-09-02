@@ -3,6 +3,24 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import { Objetivo } from '../models/api.models';
 
+export interface CrearObjetivo {
+  periodoId?: string;
+  name: string;
+  description?: string;
+  targetAmount: number;
+  deadline?: string;
+  startDate?: string;
+}
+
+export interface ActualizarObjetivo {
+  name?: string;
+  description?: string;
+  targetAmount?: number;
+  deadline?: string | null;
+  startDate?: string | null;
+  periodoId?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ObjetivoService {
   private readonly api = inject(ApiService);
@@ -12,13 +30,27 @@ export class ObjetivoService {
     return res.objetivos;
   }
 
-  async create(data: { name: string; targetAmount: number; deadline?: string }): Promise<Objetivo> {
+  async listByPeriod(periodoId: string): Promise<Objetivo[]> {
+    const res = await firstValueFrom(
+      this.api.get<{ objetivos: Objetivo[] }>(`/objectives/period/${periodoId}`),
+    );
+    return res.objetivos;
+  }
+
+  async create(data: CrearObjetivo): Promise<Objetivo> {
     const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>('/objectives', data));
     return res.objetivo;
   }
 
-  async update(id: string, data: { name?: string; targetAmount?: number; deadline?: string }): Promise<Objetivo> {
-    const res = await firstValueFrom(this.api.put<{ objetivo: Objetivo }>(`/objectives/${id}`, data));
+  async createByPeriod(periodoId: string, data: Omit<CrearObjetivo, 'periodoId'>): Promise<Objetivo> {
+    const res = await firstValueFrom(
+      this.api.post<{ objetivo: Objetivo }>(`/objectives/period/${periodoId}`, data),
+    );
+    return res.objetivo;
+  }
+
+  async update(id: string, data: ActualizarObjetivo): Promise<Objetivo> {
+    const res = await firstValueFrom(this.api.patch<{ objetivo: Objetivo }>(`/objectives/${id}`, data));
     return res.objetivo;
   }
 
@@ -27,12 +59,22 @@ export class ObjetivoService {
   }
 
   async deposit(id: string, amount: number): Promise<Objetivo> {
-    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/deposit`, { amount }));
+    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/contributions`, { amount }));
     return res.objetivo;
   }
 
   async withdraw(id: string, amount: number): Promise<Objetivo> {
-    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/withdraw`, { amount }));
+    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/withdrawals`, { amount }));
+    return res.objetivo;
+  }
+
+  async complete(id: string): Promise<Objetivo> {
+    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/complete`));
+    return res.objetivo;
+  }
+
+  async cancel(id: string): Promise<Objetivo> {
+    const res = await firstValueFrom(this.api.post<{ objetivo: Objetivo }>(`/objectives/${id}/cancel`));
     return res.objetivo;
   }
 }

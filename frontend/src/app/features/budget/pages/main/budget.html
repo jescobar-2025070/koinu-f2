@@ -1,0 +1,140 @@
+<div class="budget-view">
+  <div class="section-title">PRESUPUESTO</div>
+
+  @if (periodos.length === 0) {
+    <div class="budget-empty">Primero crea un período para poder definir un presupuesto.</div>
+  } @else {
+    <div class="budget-toolbar">
+      <div class="form-field" style="min-width: 260px;">
+        <label>PERÍODO</label>
+        <select class="glow-pill" [ngModel]="selectedPeriodId" (ngModelChange)="selectedPeriodId = $event; selectPeriod()">
+          @for (p of periodos; track p.id) {
+            <option [value]="p.id">{{ p.name }} ({{ p.status }})</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">PRESUPUESTO TOTAL</div>
+      @if (budget?.presupuesto) {
+        <div class="budget-status">
+          <span>Total definido:</span>
+          <strong>{{ formatCurrency(budget!.presupuesto!.totalAmount) }}</strong>
+        </div>
+      } @else {
+        <div class="budget-status dim">Este período aún no tiene presupuesto definido.</div>
+      }
+      <div class="total-row">
+        <div class="form-field" style="max-width: 260px;">
+          <label>MONTO (Q)</label>
+          <input type="number" step="0.01" min="0" class="glow-pill" [(ngModel)]="totalInput">
+        </div>
+        <button class="btn-primary" (click)="saveTotal()" [disabled]="savingTotal || !isActivePeriod()">
+          {{ budget?.presupuesto ? 'Actualizar Presupuesto' : 'Definir Presupuesto' }}
+        </button>
+      </div>
+      <div class="save-msg">{{ msg }}</div>
+    </div>
+
+    @if (budget?.presupuesto) {
+      <div class="panel">
+        <div class="panel-title">ASIGNACIONES POR CATEGORÍA</div>
+        <div class="summary-row">
+          <div class="summary-item">
+            <span class="stat-label">ASIGNADO</span>
+            <span class="stat-value cyan">{{ formatCurrency(budget!.asignadoTotal) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="stat-label">PENDIENTE</span>
+            <span class="stat-value">{{ formatCurrency(budget!.presupuesto!.totalAmount - budget!.asignadoTotal) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="stat-label">EXCEDENTE</span>
+            <span class="stat-value" [class.negative]="budget!.excedenteTotal > 0">{{ formatCurrency(budget!.excedenteTotal) }}</span>
+          </div>
+        </div>
+
+        <div class="allocation-form">
+          <div class="form-field" style="min-width: 220px;">
+            <label>CATEGORÍA</label>
+            <select class="glow-pill" [(ngModel)]="allocationCategoryId">
+              <option value="">Selecciona una categoría</option>
+              @for (c of categoriasGasto; track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field" style="max-width: 200px;">
+            <label>MONTO (Q)</label>
+            <input type="number" step="0.01" min="0" class="glow-pill" [(ngModel)]="allocationAmount">
+          </div>
+          <button class="btn-primary" (click)="addAllocation()" [disabled]="savingAllocation || !isActivePeriod()">
+            Agregar
+          </button>
+        </div>
+        <div class="save-msg">{{ allocationMsg }}</div>
+
+        @if (budget!.asignaciones.length > 0) {
+          <table class="budget-table">
+            <thead>
+              <tr>
+                <th>CATEGORÍA</th>
+                <th>MONTO</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of budget!.asignaciones; track a.id) {
+                <tr>
+                  <td>{{ getCategoryName(a.categoriaGastoId) }}</td>
+                  <td>{{ formatCurrency(a.amount) }}</td>
+                  <td class="table-actions">
+                    <button class="row-action" (click)="updateAllocation(a)" title="Editar monto">
+                      <span class="material-symbols-outlined" style="font-size:14px;">edit</span>
+                    </button>
+                    <button class="row-action danger" (click)="deleteAllocation(a)" title="Eliminar">
+                      <span class="material-symbols-outlined" style="font-size:14px;">delete</span>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <div class="budget-empty">No hay asignaciones. Agrega montos por categoría para planificar tus gastos.</div>
+        }
+      </div>
+    }
+
+    <div class="panel">
+      <div class="panel-title">EXCEDENTES (SOBREPRESUPUESTO)</div>
+      <div class="summary-row">
+        <div class="summary-item">
+          <span class="stat-label">TOTAL EXCEDENTE</span>
+          <span class="stat-value" [class.negative]="overrunsTotal > 0">{{ formatCurrency(overrunsTotal) }}</span>
+        </div>
+      </div>
+      @if (overruns.length > 0) {
+        <table class="budget-table">
+          <thead>
+            <tr>
+              <th>FECHA</th>
+              <th>MONTO</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of overruns; track o.id) {
+              <tr>
+                <td>{{ formatDate(o.createdAt) }}</td>
+                <td>{{ formatCurrency(o.amount) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="budget-empty">Sin excedentes hasta ahora: tus gastos están dentro del presupuesto.</div>
+      }
+    </div>
+  }
+</div>

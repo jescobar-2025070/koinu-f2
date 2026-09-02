@@ -14,6 +14,16 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/pages/register/register').then((m) => m.Register),
   },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/pages/reset-password/reset-password').then((m) => m.ResetPassword),
+  },
   // Dashboard routes
   {
     path: 'dashboard',
@@ -113,6 +123,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/objectives/pages/main/main').then((m) => m.ObjectivesMain),
+  },
+  // Budget routes
+  {
+    path: 'budget',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/budget/pages/main/budget').then((m) => m.BudgetMain),
   },
   // Admin routes
   {

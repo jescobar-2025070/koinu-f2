@@ -59,4 +59,44 @@ export class CategoriaController {
       next(error);
     }
   };
+
+  updateIngreso = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      const categoria = await this.categoriaService.updateIngreso(userId, req.params.id, req.body.name);
+      res.status(200).json({ categoria });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  updateGasto = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      const categoria = await this.categoriaService.updateGasto(userId, req.params.id, req.body.name);
+      res.status(200).json({ categoria });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  deleteIngreso = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      await this.categoriaService.deleteIngreso(userId, req.params.id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  deleteGasto = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      await this.categoriaService.deleteGasto(userId, req.params.id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  };
 }

@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
 import { DashboardService } from '../../../../core/services/dashboard.service';
+import { DashboardData } from '../../../../core/models/api.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,14 +15,13 @@ export class Dashboard implements OnInit {
   private readonly dashboardService = inject(DashboardService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  budgetTotal = 0;
-  budgetAvailable = 0;
-  objectiveCurrent = 0;
-  objectiveTarget = 0;
-  objectiveProgress = 0;
-  periodEnd = '—';
+  data: DashboardData | null = null;
   hasActivePeriod = false;
   loading = true;
+  periodEnd = '—';
+  objetivoCurrent = 0;
+  objetivoTarget = 0;
+  objetivoProgress = 0;
 
   ngOnInit(): void {
     this.sidebarService.setDashboard();
@@ -36,16 +36,13 @@ export class Dashboard implements OnInit {
       if (activePeriod) {
         this.hasActivePeriod = true;
         this.periodEnd = this.formatDate(new Date(activePeriod.endDate));
+        this.data = await this.dashboardService.get(activePeriod.id);
 
-        const data = await this.dashboardService.get(activePeriod.id);
-        this.budgetTotal = data.totalIngresos;
-        this.budgetAvailable = data.disponible;
-
-        if (data.objetivos.length > 0) {
-          const obj = data.objetivos[0];
-          this.objectiveCurrent = obj.currentAmount;
-          this.objectiveTarget = obj.targetAmount;
-          this.objectiveProgress = obj.progress;
+        const firstGoal = this.data.objetivos.find((o) => o.status === 'ACTIVE') ?? this.data.objetivos[0];
+        if (firstGoal) {
+          this.objetivoCurrent = firstGoal.currentAmount;
+          this.objetivoTarget = firstGoal.targetAmount;
+          this.objetivoProgress = firstGoal.progress;
         }
       }
     } catch (e) {

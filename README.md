@@ -8,8 +8,8 @@ Plataforma web de **gestión de finanzas personales por periodos**.
 - **Descripción:** Aplicación web que permite a un usuario registrar, organizar y analizar sus ingresos, gastos, presupuestos, redistribuciones, excedentes y objetivos financieros dentro de periodos definidos por él mismo. Incluye un módulo administrativo para gestionar usuarios y configuración técnica.
 - **Objetivo:** Desarrollar un MVP funcional, testeable, mantenible y auditable. La administración está estrictamente separada de la información financiera personal (el `ADMIN` no puede consultar las finanzas de los usuarios).
 - **Problema que resuelve:** Permitir que una persona administre manualmente sus finanzas personales, obtenga información organizada y reciba recomendaciones básicas, sin realizar operaciones financieras externas.
-- **Estado actual del desarrollo:** Etapa 3 completa.
-- **Alcance actual:** Autenticación completa, módulos de negocio (períodos con estados y activación, movimientos con tratamiento fiscal, objetivos categorías separadas por usuario), dashboard con estadísticas, frontend integrado con backend en tiempo real, diseño glassmorphism con SVG decorativos.
+- **Estado actual del desarrollo:** Fase 3 completa.
+- **Alcance actual:** Autenticación completa (login/registro, refresh token rotativo, forgot/reset password), módulos de negocio (períodos con estados y activación, movimientos con tratamiento fiscal, objetivos, categorías separadas por usuario, presupuestos por período con asignaciones y excedentes), dashboard con estadísticas y recomendaciones, informes preliminares/finales, panel de administración de usuarios, frontend integrado con backend en tiempo real, diseño glassmorphism con SVG decorativos.
 
 ## Tecnologías
 
@@ -68,14 +68,15 @@ Con middleware de:
 ### Frontend
 
 - **Core:** servicios de API, servicio de autenticación (estado con signals), guards, interceptors y modelos.
-- **Features:** módulos funcionales (auth, dashboard, periods, movements, objectives, admin). Las rutas se cargan con *lazy loading*.
+- **Features:** módulos funcionales (auth, dashboard, periods, movements, objectives, budget, admin). Las rutas se cargan con *lazy loading*.
 - **Diseño:** Glassmorphism con gradientes, tubos SVG decorativos, sidebar dinámica, topbar tipo pill.
 
 ### Autenticación
 
-- El login genera un JWT firmado con `JWT_SECRET`, que incluye `sub` (id de usuario), `email` y `roles`.
+- El login genera un JWT firmado con `JWT_SECRET`, que incluye `sub` (id de usuario), `email` y `roles`. El JWT de acceso corto (cookie HttpOnly) se combina con un **refresh token** rotativo (tabla `refresh_tokens`, almacenado con hash): cada refresco revoca el token anterior y emite uno nuevo.
 - El JWT se envía en una cookie `HttpOnly` (`SameSite=Lax`). En producción la cookie es `Secure` (requiere HTTPS).
-- El frontend **no** almacena el token: al iniciar restaura la sesión consultando `GET /auth/me` y las peticiones envían la cookie automáticamente (`withCredentials: true`).
+- El frontend **no** almacena el token de acceso: al iniciar restaura la sesión consultando `GET /auth/me` y las peticiones envían la cookie automáticamente (`withCredentials: true`). El refresh token se conserva en `localStorage` (clave `koinu_refresh_token`) para renovar la sesión cuando el JWT expira.
+- **Recuperación de contraseña:** `POST /auth/forgot-password` genera un token de un solo uso con expiración (tabla `password_reset_tokens`, hash en base de datos) y `POST /auth/reset-password` lo consume para fijar la nueva contraseña. En desarrollo el token se devuelve en la respuesta para poder probar el flujo.
 - Tras login exitoso, se redirige automáticamente al dashboard.
 
 ### Autorización por roles
@@ -91,16 +92,16 @@ finanzas/
 ├── backend/
 │   ├── src/
 │   │   ├── config/          # Configuración (env, base de datos, transacciones)
-│   │   ├── controllers/     # Capa HTTP (auth, roles, periodos, movimientos, objetivos)
+│   │   ├── controllers/     # Capa HTTP (auth, roles, usuarios, sistema, periodos, movimientos, objetivos)
 │   │   ├── dto/
 │   │   │   ├── requests/    # Contratos de entrada (auth)
 │   │   │   └── responses/   # Contratos de salida (auth, roles)
-│   │   ├── entities/        # Modelos de dominio (usuario, rol, periodo, movimiento, objetivo, categoría, impuesto)
+│   │   ├── entities/        # Modelos de dominio (usuario, rol, periodo, movimiento, objetivo, categoría, impuesto, presupuesto, asignación, excedente, snapshot, tokens)
 │   │   ├── errors/          # AppError y catálogo de códigos de error
 │   │   ├── middleware/      # authenticate, authorize, validate, error-handler
 │   │   ├── repositories/    # Persistencia exclusivamente
 │   │   ├── routes/          # Definición de rutas REST
-│   │   ├── services/        # Lógica de negocio (auth, users, roles, periodos, movimientos, objetivos)
+│   │   ├── services/        # Lógica de negocio (auth, users, roles, periodos, movimientos, objetivos, presupuestos, informes)
 │   │   ├── validators/      # Validadores de entrada
 │   │   ├── mappers/         # Conversión entidad → DTO de salida
 │   │   ├── utils/           # JWT, hashing de contraseñas, cookies, migraciones
@@ -109,7 +110,7 @@ finanzas/
 │   │   └── server.ts        # Punto de entrada del servidor
 │   ├── migrations/          # Migraciones SQL versionadas
 │   ├── scripts/             # migrate.ts, seed.ts, seed-full.ts
-│   ├── tests/               # Pruebas de la Etapa 1 (23 casos)
+│   ├── tests/               # Pruebas del backend (36 casos)
 │   ├── package.json
 │   ├── .env.example
 │   └── README.md
@@ -125,15 +126,16 @@ finanzas/
 │           │   ├── guards/        # authGuard, adminGuard
 │           │   ├── interceptors/  # credentials, auth-error
 │           │   ├── models/        # api.models.ts (interfaces TypeScript)
-│           │   └── services/      # ApiService, PeriodoService, MovimientoService,
-│           │                      # ObjetivoService, CategoriaService, SidebarService
+│           │   └── services/      # ApiService, PeriodoService, MovimientoService, ObjetivoService,
+│           │                      # CategoriaService, BudgetService, AdminService, SystemService, SidebarService
 │           ├── features/
-│           │   ├── auth/          # páginas login y register
+│           │   ├── auth/          # páginas login, register, forgot-password, reset-password
 │           │   ├── dashboard/     # dashboard + sub-páginas (movimientos, ingresos, gastos, informes)
 │           │   ├── periods/       # overview, new, edit, finalize, history
 │           │   ├── movements/     # income, expenses, history-income, history-expenses
-│           │   ├── objectives/    # página principal (placeholder)
-│           │   └── admin/         # panel admin (solo ADMIN)
+│           │   ├── objectives/    # página principal (funcional)
+│           │   ├── budget/        # presupuesto por período (total, asignaciones, excedentes)
+│           │   └── admin/         # panel admin de usuarios (solo ADMIN)
 │           ├── app.routes.ts      # Todas las rutas con lazy loading
 │           ├── app.config.ts      # Bootstrap con providers
 │           ├── app.ts             # Componente raíz
@@ -294,14 +296,20 @@ Tras ejecutar `pnpm seed:full`:
 - [x] Backend realineado al diseño de la Etapa 3 (reset de base de datos, nuevas migraciones 005-011).
 - [x] Pruebas backend de Etapa 3 (períodos/estados, categorías por usuario, tratamiento fiscal, dashboard).
 
+### Fase 3 (completada)
+
+- [x] Presupuesto por período: total, asignaciones por categoría de gasto y excedentes acumulados (migraciones 012-014, endpoints `/periods/:periodId/budget*`).
+- [x] Dashboard v2 con doble disponible (por ingresos y por presupuesto) y recomendaciones financieras.
+- [x] Informes preliminares/finales con generación de snapshots (migración 015, `/periods/:periodId/reports/*`).
+- [x] Objetivos ligados a período con contribuciones, retiros, completado/cancelación y fechas (migración 016, `/objectives` + `/objectives/:id/*`).
+- [x] Autenticación avanzada: refresh token rotativo (migración 004/repositorio de tokens) y forgot/reset password (migración 017).
+- [x] Panel de administración de usuarios para rol `ADMIN`: listar, activar/desactivar, asignar roles (mínimo uno) y eliminar usuarios (`/users`, `/system/health`).
+- [x] Frontend: página de presupuesto, página admin, páginas forgot/reset password, menú DASHBOARD/OBJETIVOS/PRESUPUESTO/ADMIN (visible con rol `ADMIN`).
+- [x] Pruebas backend de Fase 3 (roles/administración de usuarios, auth avanzada) — 36 casos en total.
+
 ### Pendiente
 
-- [ ] Administración de usuarios desde el panel ADMIN (CRUD).
-- [ ] Endpoints de forgot/reset password.
-- [ ] Autenticación de refresh tokens.
-- [ ] Página de objetivos funcional (actualmente es placeholder).
-- [ ] Página de informes del dashboard.
-- [ ] Pruebas frontend.
+- [ ] Pruebas frontend (vitest).
 
 ## API
 
@@ -312,9 +320,12 @@ Base: `http://localhost:3000/api/v1`
 | Método | Ruta | Auth | Descripción |
 | --- | --- | --- | --- |
 | `POST` | `/auth/register` | No | Registrar usuario (rol `USR`) |
-| `POST` | `/auth/login` | No | Iniciar sesión (cookie HttpOnly) |
+| `POST` | `/auth/login` | No | Iniciar sesión (cookie HttpOnly + refresh token en respuesta) |
+| `POST` | `/auth/refresh` | No | Rotar refresh token (revoca el anterior y emite uno nuevo) |
 | `POST` | `/auth/logout` | Sí | Cerrar sesión |
 | `GET` | `/auth/me` | Sí | Obtener sesión actual |
+| `POST` | `/auth/forgot-password` | No | Solicitar recuperación de contraseña (token devuelto en desarrollo) |
+| `POST` | `/auth/reset-password` | No | Restablecer contraseña (`token`, `password`) |
 
 ### Roles
 
@@ -333,9 +344,29 @@ Base: `http://localhost:3000/api/v1`
 | `POST` | `/periods/:id/activate` | Sí | Activar período (DRAFT → ACTIVE) |
 | `POST` | `/periods/:id/finalize` | Sí | Finalizar período (ACTIVE → FINISHED) |
 | `POST` | `/periods/:id/cancel` | Sí | Cancelar período (→ CANCELLED) |
-| `GET` | `/periods/:id/dashboard` | Sí | Dashboard del período |
+| `GET` | `/periods/:id/dashboard` | Sí | Dashboard del período (disponible por ingresos y por presupuesto, recomendaciones) |
 
 > Estados de período: `DRAFT` → `ACTIVE` → `FINISHED` (o `CANCELLED`). Solo se puede registrar movimientos en un período `ACTIVE`, y existe máximo un `ACTIVE` por usuario.
+
+### Presupuestos
+
+| Método | Ruta | Auth | Descripción |
+| --- | --- | --- | --- |
+| `GET` | `/periods/:periodId/budget` | Sí | Presupuesto del período + asignaciones y excedentes calculados |
+| `POST` | `/periods/:periodId/budget` | Sí | Crear presupuesto (`totalAmount`) |
+| `PATCH` | `/periods/:periodId/budget` | Sí | Actualizar total del presupuesto |
+| `GET` | `/periods/:periodId/budget/allocations` | Sí | Listar asignaciones por categoría |
+| `POST` | `/periods/:periodId/budget/allocations` | Sí | Crear asignación (`categoriaGastoId`, `amount`) |
+| `PATCH` | `/periods/budget-allocations/:id` | Sí | Actualizar monto de asignación |
+| `DELETE` | `/periods/budget-allocations/:id` | Sí | Eliminar asignación |
+| `GET` | `/periods/:periodId/budget/overruns` | Sí | Excedentes acumulados por fecha |
+
+### Informes
+
+| Método | Ruta | Auth | Descripción |
+| --- | --- | --- | --- |
+| `GET` | `/periods/:periodId/reports/preliminary` | Sí | Informe preliminar (totales, presupuesto, por categoría, objetivos, recomendaciones) |
+| `GET` | `/periods/:periodId/reports/final` | Sí | Informe final (requiere período `FINISHED`, guarda snapshot) |
 
 ### Movimientos
 
@@ -343,6 +374,8 @@ Base: `http://localhost:3000/api/v1`
 | --- | --- | --- | --- |
 | `GET` | `/movements` | Sí | Listar movimientos (`?periodId=`) |
 | `POST` | `/movements` | Sí | Crear movimiento (ingreso con bruto/retención o gasto) |
+| `GET` | `/movements/:id` | Sí | Obtener movimiento por id |
+| `PUT` | `/movements/:id` | Sí | Modificar movimiento |
 | `DELETE` | `/movements/:id` | Sí | Eliminar movimiento |
 | `GET` | `/movements/stats` | Sí | Estadísticas (`?periodId=`) |
 
@@ -351,11 +384,13 @@ Base: `http://localhost:3000/api/v1`
 | Método | Ruta | Auth | Descripción |
 | --- | --- | --- | --- |
 | `GET` | `/objectives` | Sí | Listar objetivos |
-| `POST` | `/objectives` | Sí | Crear objetivo |
+| `POST` | `/objectives` | Sí | Crear objetivo (`name`, `targetAmount`, `currentAmount?`, `periodId?`, `deadline?`, `description?`) |
 | `PUT` | `/objectives/:id` | Sí | Modificar objetivo |
 | `DELETE` | `/objectives/:id` | Sí | Eliminar objetivo |
-| `POST` | `/objectives/:id/deposit` | Sí | Depositar en objetivo |
-| `POST` | `/objectives/:id/withdraw` | Sí | Retirar de objetivo |
+| `POST` | `/objectives/:id/deposit` | Sí | Contribuir al objetivo (monto) |
+| `POST` | `/objectives/:id/withdraw` | Sí | Retirar del objetivo (monto) |
+| `POST` | `/objectives/:id/complete` | Sí | Marcar como completado |
+| `POST` | `/objectives/:id/cancel` | Sí | Cancelar objetivo |
 
 ### Categorías
 
@@ -363,8 +398,25 @@ Base: `http://localhost:3000/api/v1`
 | --- | --- | --- | --- |
 | `GET` | `/categories/income` | Sí | Listar categorías de ingreso del usuario |
 | `POST` | `/categories/income` | Sí | Crear categoría de ingreso |
+| `PATCH` | `/categories/income/:id` | Sí | Modificar/desactivar categoría de ingreso |
 | `GET` | `/categories/expense` | Sí | Listar categorías de gasto del usuario |
 | `POST` | `/categories/expense` | Sí | Crear categoría de gasto |
+| `PATCH` | `/categories/expense/:id` | Sí | Modificar/desactivar categoría de gasto |
+
+### Usuarios (ADMIN)
+
+| Método | Ruta | Auth | Descripción |
+| --- | --- | --- | --- |
+| `GET` | `/users` | ADMIN | Listar todos los usuarios con roles y estado |
+| `PATCH` | `/users/:id/active` | ADMIN | Activar/desactivar cuenta (`isActive`) |
+| `PUT` | `/users/:id/roles` | ADMIN | Asignar roles (`roles` — al menos uno) |
+| `DELETE` | `/users/:id` | ADMIN | Eliminar usuario |
+
+### Sistema
+
+| Método | Ruta | Auth | Descripción |
+| --- | --- | --- | --- |
+| `GET` | `/system/health` | ADMIN | Estado de salud (API + DB + uptime + timestamp) |
 
 ### Health Check
 
@@ -522,7 +574,11 @@ El backend calcula el monto neto (`net = gross - retention`) y lo guarda en `mov
 | `/movements/expenses` | Nuevo gasto | Formulario con selección de categoría |
 | `/movements/history/income` | Historial ingresos | Tabla con botón editar |
 | `/movements/history/expenses` | Historial gastos | Tabla con botón eliminar |
-| `/objectives` | Objetivos | Placeholder (en desarrollo) |
+| `/objectives` | Objetivos | Lista de objetivos con progreso, contribuciones y retiros |
+| `/budget` | Presupuesto | Total por período, asignaciones por categoría y excedentes |
+| `/admin` | Administración | Gestión de usuarios (roles, estado, eliminación) y salud del sistema |
+| `/forgot-password` | Recuperar contraseña | Envío de enlace/token de reset |
+| `/reset-password` | Nueva contraseña | Fija la nueva contraseña con el token recibido |
 
 ## Modelos de datos
 
@@ -611,11 +667,16 @@ Etapa 3: COMPLETADA
 - Backend realineado al diseño (reset de BD, migraciones 005-011).
 - Pruebas de Etapa 3 (períodos/estados, categorías, tratamiento fiscal, dashboard).
 
+Fase 3: COMPLETADA
+- Presupuestos por período (totales, asignaciones por categoría, excedentes) — migraciones 012-014.
+- Dashboard v2 (disponible por ingresos y por presupuesto, recomendaciones).
+- Informes preliminares/finales con snapshots — migración 015.
+- Objetivos por período con contribuciones, retiros, completo/cancelación — migración 016.
+- Autenticación avanzada: refresh token rotativo y forgot/reset password — migraciones 004 (repositorio) y 017.
+- Panel ADMIN de usuarios (roles, activo/desactivado, eliminación) y `/system/health`.
+- Frontend: páginas de presupuesto, admin, forgot/reset password; menú DASHBOARD/OBJETIVOS/PRESUPUESTO/ADMIN.
+- Pruebas backend de Fase 3 — 36 casos en total.
+
 Pendiente:
-- Página funcional de objetivos (actualmente placeholder).
-- Página de informes del dashboard.
-- Administración de usuarios desde panel ADMIN.
-- Endpoints de forgot/reset password.
-- Autenticación de refresh tokens.
-- Pruebas frontend.
+- Pruebas frontend (vitest).
 ```

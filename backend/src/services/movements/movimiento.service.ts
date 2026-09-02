@@ -7,6 +7,7 @@ import { MovimientoRepository } from '../../repositories/movimiento.repository';
 import { DetalleIngresoRepository } from '../../repositories/detalle-ingreso.repository';
 import { CategoriaIngresoRepository } from '../../repositories/categoria-ingreso.repository';
 import { CategoriaGastoRepository } from '../../repositories/categoria-gasto.repository';
+import { BudgetService } from '../budgets/budget.service';
 
 export interface CrearMovimientoInput {
   periodId: string;
@@ -165,16 +166,35 @@ export class MovimientoService {
       });
     }
 
-    const movimiento = await this.movimientoRepository.create({
-      userId,
-      periodoId,
-      type: 'EXPENSE',
-      expenseCategoryId: data.expenseCategoryId,
-      amount,
-      description: data.description,
-      date: fecha,
-    });
+    return withTransaction(async (client) => {
+      const movimientoRepo = new MovimientoRepository(client);
+      const movimiento = await movimientoRepo.create({
+        userId,
+        periodoId,
+        type: 'EXPENSE',
+        expenseCategoryId: data.expenseCategoryId,
+        amount,
+        description: data.description,
+        date: fecha,
+      });
 
+      const budgetService = new BudgetService();
+      await budgetService.registerOverrun(client, periodoId, movimiento.id);
+
+      return { movimiento };
+    });
+  }
+
+  async getById(id: string, userId: string): Promise<{ movimiento: Movimiento; detalle?: import('../../entities/detalle-ingreso.entity').DetalleIngreso } | null> {
+    const movimiento = await this.movimientoRepository.findById(id);
+    if (!movimiento || movimiento.userId !== userId) {
+      return null;
+    }
+    if (movimiento.type === 'INCOME') {
+      const detalleRepo = new DetalleIngresoRepository(pool);
+      const detalle = await detalleRepo.findById(movimiento.id);
+      return { movimiento, detalle: detalle ?? undefined };
+    }
     return { movimiento };
   }
 

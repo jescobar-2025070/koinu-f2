@@ -1,6 +1,7 @@
 import { pool, withTransaction } from '../../config/db';
 import { AppError } from '../../errors/app-error';
 import { ErrorCodes } from '../../errors/error-codes';
+import { config } from '../../config/env';
 import { RoleName } from '../../entities/role.entity';
 import { User } from '../../entities/user.entity';
 import { AuthUser } from '../../entities/auth-user';
@@ -9,12 +10,25 @@ import { LoginRequest } from '../../dto/requests/auth/login.dto';
 import { UserService } from '../users/user.service';
 import { RoleRepository } from '../../repositories/role.repository';
 import { UserRepository } from '../../repositories/user.repository';
+import { RefreshTokenRepository } from '../../repositories/refresh-token.repository';
+import { PasswordResetTokenRepository } from '../../repositories/password-reset-token.repository';
 import { CategoriaIngresoRepository } from '../../repositories/categoria-ingreso.repository';
 import { CategoriaGastoRepository } from '../../repositories/categoria-gasto.repository';
 import { hashPassword, comparePassword } from '../../utils/password.utils';
 import { toAuthUser } from '../../mappers/user.mapper';
+import {
+  generateRawToken,
+  hashToken,
+  PASSWORD_RESET_TOKEN_TTL_MS,
+  REFRESH_TOKEN_TTL_MS,
+} from '../../utils/token.utils';
 
 const DEFAULT_REGISTER_ROLE: RoleName = 'USR';
+
+export interface SessionTokens {
+  refreshToken: string;
+  refreshTokenExpiresAt: Date;
+}
 
 export class AuthService {
   private readonly userService: UserService;
@@ -61,7 +75,7 @@ export class AuthService {
     });
   }
 
-  async login(data: LoginRequest): Promise<{ authUser: AuthUser; user: User }> {
+  async login(data: LoginRequest): Promise<{ authUser: AuthUser; user: User } & SessionTokens> {
     const account = await this.userService.getUserByEmailWithRoles(data.email);
     if (!account || account.user.deletedAt) {
       throw this.invalidCredentials();
@@ -79,10 +93,126 @@ export class AuthService {
       });
     }
 
+    const tokens = await this.issueRefreshToken(account.user.id);
+
     return {
       authUser: toAuthUser(account.user, account.roles),
       user: account.user,
+      ...tokens,
     };
+  }
+
+  async refresh(rawToken: string): Promise<{ authUser: AuthUser; user: User } & SessionTokens> {
+    const repository = new RefreshTokenRepository(pool);
+    const tokenHash = hashToken(rawToken);
+    const record = await repository.findByTokenHash(tokenHash);
+
+    if (!record || record.revokedAt) {
+      throw new AppError(ErrorCodes.REFRESH_TOKEN_INVALID, {
+        message: 'El token de refresco no es válido.',
+        statusCode: 401,
+      });
+    }
+
+    if (new Date(record.expiresAt).getTime() <= Date.now()) {
+      throw new AppError(ErrorCodes.REFRESH_TOKEN_EXPIRED, {
+        message: 'El token de refresco ha expirado. Vuelve a iniciar sesión.',
+        statusCode: 401,
+      });
+    }
+
+    const account = await this.userService.getUserWithRoles(record.userId);
+    if (!account) {
+      throw new AppError(ErrorCodes.REFRESH_TOKEN_INVALID, {
+        message: 'El token de refresco no es válido.',
+        statusCode: 401,
+      });
+    }
+    if (!account.user.isActive) {
+      throw new AppError(ErrorCodes.ACCOUNT_DISABLED, {
+        message: 'La cuenta está desactivada. Contacta al administrador.',
+        statusCode: 403,
+      });
+    }
+
+    await repository.revoke(record.id);
+    const tokens = await this.issueRefreshToken(account.user.id);
+
+    return {
+      authUser: toAuthUser(account.user, account.roles),
+      user: account.user,
+      ...tokens,
+    };
+  }
+
+  async revokeAllRefreshTokens(userId: string): Promise<void> {
+    const repository = new RefreshTokenRepository(pool);
+    await repository.revokeAllByUserId(userId);
+  }
+
+  async issueRefreshToken(userId: string): Promise<SessionTokens> {
+    const repository = new RefreshTokenRepository(pool);
+    const rawToken = generateRawToken();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+
+    await repository.create({
+      userId,
+      tokenHash: hashToken(rawToken),
+      expiresAt,
+    });
+
+    return { refreshToken: rawToken, refreshTokenExpiresAt: expiresAt };
+  }
+
+  async requestPasswordReset(email: string): Promise<{ requested: boolean; resetToken: string | null }> {
+    const account = await this.userService.getUserByEmailWithRoles(email);
+    if (!account || account.user.deletedAt) {
+      return { requested: false, resetToken: null };
+    }
+    if (!account.user.isActive) {
+      return { requested: false, resetToken: null };
+    }
+
+    const repository = new PasswordResetTokenRepository(pool);
+    const rawToken = generateRawToken();
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+
+    await repository.create({
+      userId: account.user.id,
+      tokenHash: hashToken(rawToken),
+      expiresAt,
+    });
+
+    if (config.nodeEnv === 'development') {
+      console.log(`[password-reset] token para ${account.user.email}: ${rawToken}`);
+    }
+
+    return { requested: true, resetToken: config.nodeEnv === 'development' ? rawToken : null };
+  }
+
+  async resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const repository = new PasswordResetTokenRepository(pool);
+    const tokenHash = hashToken(rawToken);
+    const record = await repository.findByTokenHash(tokenHash);
+
+    if (!record || record.usedAt) {
+      throw new AppError(ErrorCodes.RECOVERY_TOKEN_INVALID, {
+        message: 'El token de recuperación no es válido.',
+        statusCode: 401,
+      });
+    }
+
+    if (new Date(record.expiresAt).getTime() <= Date.now()) {
+      throw new AppError(ErrorCodes.RECOVERY_TOKEN_EXPIRED, {
+        message: 'El token de recuperación ha expirado. Solicita uno nuevo.',
+        statusCode: 401,
+      });
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await this.userService.updatePassword(record.userId, passwordHash);
+    await repository.markUsed(record.id);
+    await this.revokeAllRefreshTokens(record.userId);
   }
 
   private invalidCredentials(): AppError {

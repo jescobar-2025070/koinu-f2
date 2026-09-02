@@ -137,6 +137,39 @@
 .objective-name {
   font-weight: 800;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-pill {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 50px;
+  background: rgba(0, 229, 255, 0.18);
+  color: var(--cyan);
+}
+
+.status-completed {
+  background: rgba(0, 255, 157, 0.16);
+  color: var(--green);
+}
+
+.status-cancelled {
+  background: rgba(255, 90, 90, 0.16);
+  color: #ff8a80;
+}
+
+.objective-description {
+  color: var(--text-dim2);
+  font-size: 0.82rem;
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
 }
 
 .objective-actions {

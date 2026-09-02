@@ -8,6 +8,13 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
+  refreshToken?: string;
+  refreshTokenExpiresAt?: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  resetToken?: string | null;
 }
 
 export interface ApiErrorResponse {

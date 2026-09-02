@@ -16,4 +16,32 @@ export class CategoriaService {
     const res = await firstValueFrom(this.api.get<{ categorias: Categoria[] }>('/categories/expense'));
     return res.categorias;
   }
+
+  async createIncome(name: string): Promise<Categoria> {
+    const res = await firstValueFrom(this.api.post<{ categoria: Categoria }>('/categories/income', { name }));
+    return res.categoria;
+  }
+
+  async createExpense(name: string): Promise<Categoria> {
+    const res = await firstValueFrom(this.api.post<{ categoria: Categoria }>('/categories/expense', { name }));
+    return res.categoria;
+  }
+
+  async updateIncome(id: string, name: string): Promise<Categoria> {
+    const res = await firstValueFrom(this.api.patch<{ categoria: Categoria }>(`/categories/income/${id}`, { name }));
+    return res.categoria;
+  }
+
+  async updateExpense(id: string, name: string): Promise<Categoria> {
+    const res = await firstValueFrom(this.api.patch<{ categoria: Categoria }>(`/categories/expense/${id}`, { name }));
+    return res.categoria;
+  }
+
+  async deleteIncome(id: string): Promise<void> {
+    await firstValueFrom(this.api.delete(`/categories/income/${id}`));
+  }
+
+  async deleteExpense(id: string): Promise<void> {
+    await firstValueFrom(this.api.delete(`/categories/expense/${id}`));
+  }
 }

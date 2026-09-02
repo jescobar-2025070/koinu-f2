@@ -7,13 +7,75 @@
     </p>
   </div>
 
-  <div class="glass-card admin__placeholder">
-    <span class="material-symbols-outlined admin__icon">manage_accounts</span>
+  <div class="glass-card admin__health">
+    <h2 class="text-title-md">Estado del sistema</h2>
+    <div class="health-row">
+      <span class="chip" [class.chip--ok]="health?.status === 'ok'">API: {{ health?.status ?? '…' }}</span>
+      <span class="chip" [class.chip--ok]="health?.db === 'ok'">DB: {{ health?.db ?? '…' }}</span>
+      <span class="health-meta">Uptime: {{ health ? (health.uptimeSeconds / 60).toFixed(1) + ' min' : '—' }}</span>
+      <span class="health-meta">Última verificación: {{ health ? formatDate(health.timestamp) : '—' }}</span>
+    </div>
+  </div>
+
+  <div class="glass-card admin__users">
     <h2 class="text-title-md">Gestión de usuarios</h2>
-    <p class="text-body-md text-on-surface-variant">
-      La administración de usuarios (crear, editar, activar/desactivar, cambiar roles,
-      restablecer contraseñas y eliminar) se implementará en etapas posteriores.
-      Por seguridad, el ADMIN no tiene acceso a la información financiera de los usuarios.
-    </p>
+
+    @if (loading) {
+      <p class="text-body-md text-on-surface-variant">Cargando usuarios…</p>
+    } @else if (users.length === 0) {
+      <p class="text-body-md text-on-surface-variant">No hay usuarios registrados.</p>
+    } @else {
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>CORREO</th>
+            <th>ESTADO</th>
+            <th>ROLES</th>
+            <th>CREADO</th>
+            <th>ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users; track u.id) {
+            <tr [class.row-self]="isSelf(u.id)">
+              <td>
+                {{ u.email }}
+                @if (isSelf(u.id)) {
+                  <span class="tag">TÚ</span>
+                }
+              </td>
+              <td>
+                <span class="chip" [class.chip--ok]="u.isActive" [class.chip--off]="!u.isActive">
+                  {{ u.isActive ? 'ACTIVO' : 'DESACTIVADO' }}
+                </span>
+              </td>
+              <td>
+                @if (rolesModel.get(u.id); as roles) {
+                  <label class="role-check">
+                    <input type="checkbox" [(ngModel)]="roles.ADMIN" [disabled]="isSelf(u.id) || !!busy.get(u.id)"> ADMIN
+                  </label>
+                  <label class="role-check">
+                    <input type="checkbox" [(ngModel)]="roles.USR" [disabled]="isSelf(u.id) || !!busy.get(u.id)"> USR
+                  </label>
+                  <button class="btn-mini" (click)="saveRoles(u)" [disabled]="isSelf(u.id) || !!busy.get(u.id)">Guardar roles</button>
+                }
+              </td>
+              <td>{{ formatDate(u.createdAt) }}</td>
+              <td class="actions-cell">
+                <button class="btn-mini" (click)="toggleActive(u)" [disabled]="isSelf(u.id) || !!busy.get(u.id)">
+                  {{ u.isActive ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button class="btn-mini danger" (click)="deleteUser(u)" [disabled]="isSelf(u.id) || !!busy.get(u.id)">Eliminar</button>
+              </td>
+            </tr>
+            @if (rowMsg.get(u.id); as msg) {
+              <tr class="row-msg">
+                <td colspan="5">{{ msg }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
   </div>
 </section>

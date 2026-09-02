@@ -1,25 +1,35 @@
 import { Db } from '../config/db';
-import { Objetivo } from '../entities/objetivo.entity';
+import { Objetivo, ObjetivoStatus } from '../entities/objetivo.entity';
 
 interface ObjetivoRow {
   id: string;
   user_id: string;
+  periodo_id: string | null;
   name: string;
+  description: string | null;
   target_amount: number;
   current_amount: number;
   deadline: Date | null;
+  start_date: Date | null;
+  status: ObjetivoStatus;
   created_at: Date;
   updated_at: Date;
 }
+
+const COLUMNS = `id, user_id, periodo_id, name, description, target_amount, current_amount, deadline, start_date, status, created_at, updated_at`;
 
 function mapRow(row: ObjetivoRow): Objetivo {
   return {
     id: row.id,
     userId: row.user_id,
+    periodoId: row.periodo_id,
     name: row.name,
+    description: row.description,
     targetAmount: row.target_amount,
     currentAmount: row.current_amount,
     deadline: row.deadline,
+    startDate: row.start_date,
+    status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -30,7 +40,7 @@ export class ObjetivoRepository {
 
   async findByUser(userId: string): Promise<Objetivo[]> {
     const result = await this.db.query<ObjetivoRow>(
-      `SELECT id, user_id, name, target_amount, current_amount, deadline, created_at, updated_at
+      `SELECT ${COLUMNS}
          FROM objetivos
         WHERE user_id = $1
         ORDER BY created_at DESC`,
@@ -39,9 +49,31 @@ export class ObjetivoRepository {
     return result.rows.map(mapRow);
   }
 
+  async findByPeriodo(userId: string, periodoId: string): Promise<Objetivo[]> {
+    const result = await this.db.query<ObjetivoRow>(
+      `SELECT ${COLUMNS}
+         FROM objetivos
+        WHERE user_id = $1 AND periodo_id = $2
+        ORDER BY created_at DESC`,
+      [userId, periodoId],
+    );
+    return result.rows.map(mapRow);
+  }
+
+  async findForReport(userId: string, periodoId: string): Promise<Objetivo[]> {
+    const result = await this.db.query<ObjetivoRow>(
+      `SELECT ${COLUMNS}
+         FROM objetivos
+        WHERE user_id = $1 AND (periodo_id = $2 OR periodo_id IS NULL)
+        ORDER BY created_at DESC`,
+      [userId, periodoId],
+    );
+    return result.rows.map(mapRow);
+  }
+
   async findById(id: string): Promise<Objetivo | null> {
     const result = await this.db.query<ObjetivoRow>(
-      `SELECT id, user_id, name, target_amount, current_amount, deadline, created_at, updated_at
+      `SELECT ${COLUMNS}
          FROM objetivos
         WHERE id = $1
         LIMIT 1`,
@@ -52,20 +84,41 @@ export class ObjetivoRepository {
 
   async create(data: {
     userId: string;
+    periodoId?: string | null;
     name: string;
+    description?: string | null;
     targetAmount: number;
-    deadline?: Date;
+    deadline?: Date | null;
+    startDate?: Date | null;
   }): Promise<Objetivo> {
     const result = await this.db.query<ObjetivoRow>(
-      `INSERT INTO objetivos (user_id, name, target_amount, deadline)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, user_id, name, target_amount, current_amount, deadline, created_at, updated_at`,
-      [data.userId, data.name, data.targetAmount, data.deadline || null],
+      `INSERT INTO objetivos (user_id, periodo_id, name, description, target_amount, deadline, start_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING ${COLUMNS}`,
+      [
+        data.userId,
+        data.periodoId ?? null,
+        data.name,
+        data.description ?? null,
+        data.targetAmount,
+        data.deadline ?? null,
+        data.startDate ?? null,
+      ],
     );
     return mapRow(result.rows[0]);
   }
 
-  async update(id: string, data: { name?: string; targetAmount?: number; deadline?: Date }): Promise<Objetivo | null> {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      description?: string | null;
+      targetAmount?: number;
+      deadline?: Date | null;
+      startDate?: Date | null;
+      periodoId?: string | null;
+    },
+  ): Promise<Objetivo | null> {
     const updates: string[] = [];
     const params: any[] = [];
     let paramIndex = 1;
@@ -73,6 +126,12 @@ export class ObjetivoRepository {
     if (data.name !== undefined) {
       updates.push(`name = $${paramIndex}`);
       params.push(data.name);
+      paramIndex++;
+    }
+
+    if (data.description !== undefined) {
+      updates.push(`description = $${paramIndex}`);
+      params.push(data.description);
       paramIndex++;
     }
 
@@ -88,6 +147,18 @@ export class ObjetivoRepository {
       paramIndex++;
     }
 
+    if (data.startDate !== undefined) {
+      updates.push(`start_date = $${paramIndex}`);
+      params.push(data.startDate);
+      paramIndex++;
+    }
+
+    if (data.periodoId !== undefined) {
+      updates.push(`periodo_id = $${paramIndex}`);
+      params.push(data.periodoId);
+      paramIndex++;
+    }
+
     if (updates.length === 0) {
       return this.findById(id);
     }
@@ -99,7 +170,7 @@ export class ObjetivoRepository {
       `UPDATE objetivos
           SET ${updates.join(', ')}
         WHERE id = $${paramIndex}
-        RETURNING id, user_id, name, target_amount, current_amount, deadline, created_at, updated_at`,
+        RETURNING ${COLUMNS}`,
       params,
     );
     return result.rows[0] ? mapRow(result.rows[0]) : null;
@@ -110,7 +181,7 @@ export class ObjetivoRepository {
       `UPDATE objetivos
           SET current_amount = current_amount + $1, updated_at = NOW()
         WHERE id = $2
-        RETURNING id, user_id, name, target_amount, current_amount, deadline, created_at, updated_at`,
+        RETURNING ${COLUMNS}`,
       [amount, id],
     );
     return result.rows[0] ? mapRow(result.rows[0]) : null;
@@ -121,8 +192,19 @@ export class ObjetivoRepository {
       `UPDATE objetivos
           SET current_amount = GREATEST(current_amount - $1, 0), updated_at = NOW()
         WHERE id = $2
-        RETURNING id, user_id, name, target_amount, current_amount, deadline, created_at, updated_at`,
+        RETURNING ${COLUMNS}`,
       [amount, id],
+    );
+    return result.rows[0] ? mapRow(result.rows[0]) : null;
+  }
+
+  async setStatus(id: string, status: ObjetivoStatus): Promise<Objetivo | null> {
+    const result = await this.db.query<ObjetivoRow>(
+      `UPDATE objetivos
+          SET status = $1, updated_at = NOW()
+        WHERE id = $2
+        RETURNING ${COLUMNS}`,
+      [status, id],
     );
     return result.rows[0] ? mapRow(result.rows[0]) : null;
   }

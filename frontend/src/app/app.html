@@ -28,6 +28,10 @@
         <a routerLink="/periods" routerLinkActive="active">PERÍODOS</a>
         <a routerLink="/movements" routerLinkActive="active">MOVIMIENTOS</a>
         <a routerLink="/objectives" routerLinkActive="active">OBJETIVOS</a>
+        <a routerLink="/budget" routerLinkActive="active">PRESUPUESTO</a>
+        @if (authService.hasRole('ADMIN')) {
+          <a routerLink="/admin" routerLinkActive="active">ADMIN</a>
+        }
       </nav>
       <button class="btn-logout" (click)="logout()">CERRAR SESIÓN</button>
     </header>

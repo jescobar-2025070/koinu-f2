@@ -47,6 +47,14 @@ export class RoleRepository {
     );
   }
 
+  async removeAllFromUser(userId: string): Promise<void> {
+    await this.db.query(
+      `DELETE FROM user_roles
+        WHERE user_id = $1`,
+      [userId],
+    );
+  }
+
   async findRolesByUserId(userId: string): Promise<RoleName[]> {
     const result = await this.db.query<{ name: RoleName }>(
       `SELECT r.name

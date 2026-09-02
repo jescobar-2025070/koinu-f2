@@ -6,6 +6,7 @@ export const pool = new Pool({
   max: 10,
 });
 
+export type { PoolClient };
 export type Db = Pool | PoolClient;
 
 export async function withTransaction<T>(

@@ -73,6 +73,22 @@ export class MovimientoController {
     }
   };
 
+  getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = this.requireUser(req);
+      const result = await this.movimientoService.getById(req.params.id, userId);
+      if (!result) {
+        throw new AppError(ErrorCodes.NOT_FOUND, {
+          message: 'Movimiento no encontrado.',
+          statusCode: 404,
+        });
+      }
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   stats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = this.requireUser(req);

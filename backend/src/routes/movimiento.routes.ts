@@ -9,10 +9,11 @@ export function movimientoRouter(): Router {
   const controller = new MovimientoController();
 
   router.get('/', authenticate, controller.list);
+  router.get('/stats', authenticate, controller.stats);
   router.post('/', authenticate, validate(validateCreateMovimientoRequest), controller.create);
   router.put('/:id', authenticate, controller.update);
   router.delete('/:id', authenticate, controller.delete);
-  router.get('/stats', authenticate, controller.stats);
+  router.get('/:id', authenticate, controller.getById);
 
   return router;
 }

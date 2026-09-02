@@ -3,6 +3,7 @@ import { AppError } from '../../errors/app-error';
 import { ErrorCodes } from '../../errors/error-codes';
 import { Periodo } from '../../entities/periodo.entity';
 import { PeriodoRepository } from '../../repositories/periodo.repository';
+import { ReportService } from '../reports/report.service';
 
 export class PeriodoService {
   private readonly periodoRepository: PeriodoRepository;
@@ -118,14 +119,21 @@ export class PeriodoService {
       });
     }
 
-    const finalized = await this.periodoRepository.setStatus(id, 'FINISHED');
-    if (!finalized) {
-      throw new AppError(ErrorCodes.INTERNAL_ERROR, {
-        message: 'Error al finalizar el período.',
-        statusCode: 500,
-      });
-    }
-    return finalized;
+    return withTransaction(async (client) => {
+      const repo = new PeriodoRepository(client);
+      const finalized = await repo.setStatus(id, 'FINISHED');
+      if (!finalized) {
+        throw new AppError(ErrorCodes.INTERNAL_ERROR, {
+          message: 'Error al finalizar el período.',
+          statusCode: 500,
+        });
+      }
+
+      const reportService = new ReportService(client);
+      await reportService.generateAndSaveSnapshot(client, id, userId);
+
+      return finalized;
+    });
   }
 
   async cancel(id: string, userId: string): Promise<Periodo> {

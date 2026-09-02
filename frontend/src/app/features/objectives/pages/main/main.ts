@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { ObjetivoService } from '../../../../core/services/objetivo.service';
+import { PeriodoService } from '../../../../core/services/periodo.service';
 import { Objetivo } from '../../../../core/models/api.models';
 
 @Component({
@@ -13,13 +14,20 @@ import { Objetivo } from '../../../../core/models/api.models';
 export class ObjectivesMain implements OnInit {
   private readonly sidebarService = inject(SidebarService);
   private readonly objetivoService = inject(ObjetivoService);
+  private readonly periodoService = inject(PeriodoService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   objetivos: Objetivo[] = [];
+  periodNames = new Map<string, string>();
   showForm = false;
   formName = '';
+  formDescription = '';
   formTarget = 0;
   formDeadline = '';
+  formPeriodId: string | undefined;
+  periodos: { id: string; name: string }[] = [
+    { id: '', name: 'Objetivo general (sin período)' },
+  ];
   saving = false;
   saveMessage = '';
   transaccion: { id: string; amount: number; tipo: 'DEPOSIT' | 'WITHDRAW' } | null = null;
@@ -32,7 +40,16 @@ export class ObjectivesMain implements OnInit {
 
   private async loadData(): Promise<void> {
     try {
-      this.objetivos = await this.objetivoService.list();
+      const [objetivos, periodos] = await Promise.all([
+        this.objetivoService.list(),
+        this.periodoService.list(),
+      ]);
+      this.objetivos = objetivos;
+      this.periodNames = new Map(periodos.map((p) => [p.id, p.name]));
+      this.periodos = [
+        { id: '', name: 'Objetivo general (sin período)' },
+        ...periodos.map((p) => ({ id: p.id, name: p.name })),
+      ];
       this.cdr.markForCheck();
     } catch (e) {
       console.error('Error loading objectives:', e);
@@ -44,6 +61,24 @@ export class ObjectivesMain implements OnInit {
       return 0;
     }
     return Math.min(100, (o.currentAmount / o.targetAmount) * 100);
+  }
+
+  statusLabel(o: Objetivo): string {
+    switch (o.status) {
+      case 'COMPLETED':
+        return 'COMPLETADO';
+      case 'CANCELLED':
+        return 'CANCELADO';
+      default:
+        return 'ACTIVO';
+    }
+  }
+
+  periodName(o: Objetivo): string {
+    if (!o.periodoId) {
+      return 'General';
+    }
+    return this.periodNames.get(o.periodoId) ?? '—';
   }
 
   formatCurrency(amount: number): string {
@@ -61,8 +96,10 @@ export class ObjectivesMain implements OnInit {
   openForm(): void {
     this.showForm = true;
     this.formName = '';
+    this.formDescription = '';
     this.formTarget = 0;
     this.formDeadline = '';
+    this.formPeriodId = '';
     this.saveMessage = '';
     this.cdr.markForCheck();
   }
@@ -76,7 +113,9 @@ export class ObjectivesMain implements OnInit {
     this.saving = true;
     try {
       await this.objetivoService.create({
+        periodoId: this.formPeriodId || undefined,
         name: this.formName.trim(),
+        description: this.formDescription.trim() || undefined,
         targetAmount: this.formTarget,
         deadline: this.formDeadline || undefined,
       });
@@ -117,6 +156,24 @@ export class ObjectivesMain implements OnInit {
       this.transactionMsg = 'No se pudo realizar la transacción.';
     } finally {
       this.cdr.markForCheck();
+    }
+  }
+
+  async completeObjetivo(id: string): Promise<void> {
+    try {
+      await this.objetivoService.complete(id);
+      await this.loadData();
+    } catch (e) {
+      console.error('Error completing objective:', e);
+    }
+  }
+
+  async cancelObjetivo(id: string): Promise<void> {
+    try {
+      await this.objetivoService.cancel(id);
+      await this.loadData();
+    } catch (e) {
+      console.error('Error cancelling objective:', e);
     }
   }
 

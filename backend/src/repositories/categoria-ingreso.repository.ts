@@ -56,6 +56,27 @@ export class CategoriaIngresoRepository {
     return mapRow(result.rows[0]);
   }
 
+  async update(id: string, name: string): Promise<CategoriaIngreso | null> {
+    const result = await this.db.query<CategoriaRow>(
+      `UPDATE categorias_ingreso
+          SET name = $2
+        WHERE id = $1
+        RETURNING id, user_id, name, is_default, is_active, created_at`,
+      [id, name],
+    );
+    return result.rows[0] ? mapRow(result.rows[0]) : null;
+  }
+
+  async softDelete(id: string): Promise<boolean> {
+    const result = await this.db.query(
+      `UPDATE categorias_ingreso
+          SET is_active = FALSE
+        WHERE id = $1`,
+      [id],
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
   async createDefaultsForUser(userId: string): Promise<void> {
     await this.db.query(
       `INSERT INTO categorias_ingreso (user_id, name, is_default)

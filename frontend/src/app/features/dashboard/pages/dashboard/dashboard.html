@@ -10,23 +10,23 @@
 } @else {
   <div class="grid-2x2">
     <div>
-      <div class="stat-label">PRESUPUESTO TOTAL</div>
-      <div class="stat-value">{{ formatCurrency(budgetTotal) }}</div>
+      <div class="stat-label">{{ data?.presupuesto ? 'PRESUPUESTO TOTAL' : 'INGRESOS TOTALES' }}</div>
+      <div class="stat-value">{{ formatCurrency(data?.presupuesto?.totalAmount ?? data?.totalIngresos ?? 0) }}</div>
     </div>
     <div>
-      <div class="stat-label">PRESUPUESTO DISPONIBLE</div>
-      <div class="stat-value green">{{ formatCurrency(budgetAvailable) }}</div>
+      <div class="stat-label">DISPONIBLE</div>
+      <div class="stat-value green">{{ formatCurrency(data?.disponible ?? 0) }}</div>
     </div>
     <div>
       <div class="stat-label">PROGRESO DEL OBJETIVO</div>
       <div class="objective-values">
-        <span class="cyan">{{ formatCurrency(objectiveCurrent) }}</span>
+        <span class="cyan">{{ formatCurrency(objetivoCurrent) }}</span>
         <span class="separator"> de </span>
-        <span class="amber">{{ formatCurrency(objectiveTarget) }}</span>
+        <span class="amber">{{ formatCurrency(objetivoTarget) }}</span>
       </div>
       <div class="progress-row">
-        <div class="progress-pill"><div class="fill" [style.--pct.%]="objectiveProgress"></div></div>
-        <div class="progress-pct">{{ objectiveProgress }} %</div>
+        <div class="progress-pill"><div class="fill" [style.--pct.%]="objetivoProgress"></div></div>
+        <div class="progress-pct">{{ objetivoProgress }} %</div>
       </div>
     </div>
     <div>
@@ -34,4 +34,43 @@
       <div class="stat-value cyan">{{ periodEnd }}</div>
     </div>
   </div>
+
+  @if (data?.presupuesto) {
+    <div class="budget-box">
+      <div class="budget-title">PRESUPUESTO DEL PERÍODO</div>
+      <div class="budget-stats">
+        <div>
+          <div class="stat-label">TOTAL</div>
+          <div class="stat-value">{{ formatCurrency(data!.presupuesto!.totalAmount) }}</div>
+        </div>
+        <div>
+          <div class="stat-label">ASIGNADO</div>
+          <div class="stat-value cyan">{{ formatCurrency(data!.presupuesto!.asignadoTotal) }}</div>
+        </div>
+        <div>
+          <div class="stat-label">EXCEDENTE</div>
+          <div class="stat-value" [class.negative]="data!.presupuesto!.excedenteTotal > 0">
+            {{ formatCurrency(data!.presupuesto!.excedenteTotal) }}
+          </div>
+        </div>
+        <div>
+          <div class="stat-label">DISPONIBLE POR PRESUPUESTO</div>
+          <div class="stat-value" [class.negative]="(data!.disponiblePorPresupuesto ?? 0) < 0">
+            {{ formatCurrency(data!.disponiblePorPresupuesto ?? 0) }}
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if ((data?.recomendaciones?.length ?? 0) > 0) {
+    <div class="rec-box">
+      <div class="rec-title">RECOMENDACIONES</div>
+      <ul class="rec-list">
+        @for (r of data!.recomendaciones; track r) {
+          <li>{{ r }}</li>
+        }
+      </ul>
+    </div>
+  }
 }

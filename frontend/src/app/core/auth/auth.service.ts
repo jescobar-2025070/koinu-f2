@@ -2,9 +2,11 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
-import { AuthResponse, User } from './auth.models';
+import { AuthResponse, ForgotPasswordResponse, User } from './auth.models';
 
 export type AuthStatus = 'checking' | 'authenticated' | 'guest';
+
+const REFRESH_TOKEN_KEY = 'koinu_refresh_token';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -54,6 +56,9 @@ export class AuthService {
       this.redirectingToLogin = false;
       this.startHeartbeat();
     } catch (error: any) {
+      if (await this.refreshSession()) {
+        return;
+      }
       if (error?.error?.error?.code === 'TOKEN_EXPIRED') {
         this.markSessionExpired();
       }
@@ -65,6 +70,7 @@ export class AuthService {
     const response = await firstValueFrom(
       this.api.post<AuthResponse>('/auth/login', { email, password }),
     );
+    this.persistRefreshToken(response.refreshToken);
     this.user.set(response.user);
     this.status.set('authenticated');
     this.redirectingToLogin = false;
@@ -84,11 +90,51 @@ export class AuthService {
     }
   }
 
+  async requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
+    return await firstValueFrom(this.api.post<ForgotPasswordResponse>('/auth/forgot-password', { email }));
+  }
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    await firstValueFrom(this.api.post<void>('/auth/reset-password', { token, password }));
+  }
+
+  async refreshSession(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      return false;
+    }
+    try {
+      const response = await firstValueFrom(
+        this.api.post<AuthResponse>('/auth/refresh', { refreshToken }),
+      );
+      this.persistRefreshToken(response.refreshToken);
+      this.user.set(response.user);
+      this.status.set('authenticated');
+      this.redirectingToLogin = false;
+      this.startHeartbeat();
+      return true;
+    } catch {
+      this.clearSession();
+      return false;
+    }
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  }
+
+  private persistRefreshToken(token: string | undefined): void {
+    if (token) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, token);
+    }
+  }
+
   clearSession(): void {
     this.stopHeartbeat();
     this.user.set(null);
     this.status.set('guest');
     this.initPromise = null;
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 
   hasRole(role: string): boolean {
@@ -113,7 +159,7 @@ export class AuthService {
     try {
       await firstValueFrom(this.api.get<AuthResponse>('/auth/me'));
     } catch {
-      // Si el token expiró, el interceptor marca la expiración y se muestra el modal.
+      // Si el token expiró, el interceptor se encarga de intentar refrescarlo.
     }
   }
 }

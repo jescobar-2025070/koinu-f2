@@ -107,6 +107,51 @@ export class MovimientoRepository {
     };
   }
 
+  async getStatsByPeriodo(periodoId: string): Promise<{ totalIngresos: number; totalGastos: number }> {
+    const result = await this.db.query<{ total_ingresos: number; total_gastos: number }>(
+      `SELECT
+        COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0) as total_ingresos,
+        COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0) as total_gastos
+      FROM movimientos
+      WHERE periodo_id = $1 AND deleted_at IS NULL`,
+      [periodoId],
+    );
+    return {
+      totalIngresos: result.rows[0].total_ingresos,
+      totalGastos: result.rows[0].total_gastos,
+    };
+  }
+
+  async getCategoryBreakdown(periodoId: string): Promise<
+    { categoryId: string | null; nombre: string; type: MovimientoType; total: number }[]
+  > {
+    const result = await this.db.query<{
+      category_id: string | null;
+      category_name: string;
+      type: MovimientoType;
+      total: number;
+    }>(
+      `SELECT
+        COALESCE(ci.id, cg.id) AS category_id,
+        COALESCE(ci.name, cg.name) AS category_name,
+        m.type,
+        SUM(m.amount) AS total
+       FROM movimientos m
+       LEFT JOIN categorias_ingreso ci ON ci.id = m.income_category_id
+       LEFT JOIN categorias_gasto cg ON cg.id = m.expense_category_id
+       WHERE m.periodo_id = $1 AND m.deleted_at IS NULL
+       GROUP BY category_id, category_name, m.type
+       ORDER BY total DESC`,
+      [periodoId],
+    );
+    return result.rows.map((row) => ({
+      categoryId: row.category_id,
+      nombre: row.category_name ?? '—',
+      type: row.type,
+      total: row.total,
+    }));
+  }
+
   async create(data: MovimientoCreateData): Promise<Movimiento> {
     const result = await this.db.query<MovimientoRow>(
       `INSERT INTO movimientos (user_id, periodo_id, type, income_category_id, expense_category_id, amount, description, date)

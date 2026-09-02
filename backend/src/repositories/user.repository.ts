@@ -57,4 +57,46 @@ export class UserRepository {
     );
     return mapRow(result.rows[0]);
   }
+
+  async updatePassword(id: string, passwordHash: string): Promise<User | null> {
+    const result = await this.db.query<UserRow>(
+      `UPDATE users
+          SET password_hash = $2, updated_at = NOW()
+        WHERE id = $1
+        RETURNING id, email, password_hash, is_active, created_at, updated_at, deleted_at`,
+      [id, passwordHash],
+    );
+    return result.rows[0] ? mapRow(result.rows[0]) : null;
+  }
+
+  async setActive(id: string, isActive: boolean): Promise<User | null> {
+    const result = await this.db.query<UserRow>(
+      `UPDATE users
+          SET is_active = $2, updated_at = NOW()
+        WHERE id = $1 AND deleted_at IS NULL
+        RETURNING id, email, password_hash, is_active, created_at, updated_at, deleted_at`,
+      [id, isActive],
+    );
+    return result.rows[0] ? mapRow(result.rows[0]) : null;
+  }
+
+  async softDelete(id: string): Promise<boolean> {
+    const result = await this.db.query(
+      `UPDATE users
+          SET deleted_at = NOW(), is_active = FALSE, updated_at = NOW()
+        WHERE id = $1 AND deleted_at IS NULL`,
+      [id],
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async findAll(): Promise<User[]> {
+    const result = await this.db.query<UserRow>(
+      `SELECT id, email, password_hash, is_active, created_at, updated_at, deleted_at
+         FROM users
+        WHERE deleted_at IS NULL
+        ORDER BY created_at DESC`,
+    );
+    return result.rows.map(mapRow);
+  }
 }

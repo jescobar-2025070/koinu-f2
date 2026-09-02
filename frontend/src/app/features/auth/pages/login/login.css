@@ -67,6 +67,34 @@
   cursor: pointer;
 }
 
+.password-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-row .pill-input {
+  flex: 1;
+}
+
+.eye-toggle {
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-pill);
+  width: 44px;
+  height: 44px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eye-toggle .material-symbols-outlined {
+  font-size: 20px;
+}
+
 .signup-row {
   text-align: center;
   font-size: 0.85rem;
