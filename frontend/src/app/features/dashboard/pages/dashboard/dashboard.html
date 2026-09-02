@@ -14,7 +14,7 @@
       <div class="stat-value">{{ formatCurrency(data?.presupuesto?.totalAmount ?? data?.totalIngresos ?? 0) }}</div>
     </div>
     <div>
-      <div class="stat-label">DISPONIBLE</div>
+      <div class="stat-label">PRESUPUESTO DISPONIBLE</div>
       <div class="stat-value green">{{ formatCurrency(data?.disponible ?? 0) }}</div>
     </div>
     <div>
@@ -34,32 +34,4 @@
       <div class="stat-value cyan">{{ periodEnd }}</div>
     </div>
   </div>
-
-  @if (data?.presupuesto) {
-    <div class="budget-box">
-      <div class="budget-title">PRESUPUESTO DEL PERÍODO</div>
-      <div class="budget-stats">
-        <div>
-          <div class="stat-label">TOTAL</div>
-          <div class="stat-value">{{ formatCurrency(data!.presupuesto!.totalAmount) }}</div>
-        </div>
-        <div>
-          <div class="stat-label">ASIGNADO</div>
-          <div class="stat-value cyan">{{ formatCurrency(data!.presupuesto!.asignadoTotal) }}</div>
-        </div>
-        <div>
-          <div class="stat-label">EXCEDENTE</div>
-          <div class="stat-value" [class.negative]="data!.presupuesto!.excedenteTotal > 0">
-            {{ formatCurrency(data!.presupuesto!.excedenteTotal) }}
-          </div>
-        </div>
-        <div>
-          <div class="stat-label">DISPONIBLE POR PRESUPUESTO</div>
-          <div class="stat-value" [class.negative]="(data!.disponiblePorPresupuesto ?? 0) < 0">
-            {{ formatCurrency(data!.disponiblePorPresupuesto ?? 0) }}
-          </div>
-        </div>
-      </div>
-    </div>
-  }
 }
