@@ -17,3 +17,6 @@ Thumbs.db
 
 # Cobertura
 coverage/
+
+# Scripts de depuración locales
+dbg.mjs
