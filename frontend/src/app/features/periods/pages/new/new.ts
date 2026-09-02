@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SidebarService } from '../../../../core/services/sidebar.service';
 import { PeriodoService } from '../../../../core/services/periodo.service';
+import { endOfCurrentMonthISO, todayLocalISO } from '../../../../core/utils/date.util';
 
 @Component({
   selector: 'app-periods-new',
@@ -15,8 +16,8 @@ export class PeriodsNew implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
 
   name = '';
-  startDate = new Date().toISOString().split('T')[0];
-  endDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+  startDate = todayLocalISO();
+  endDate = endOfCurrentMonthISO();
   saveMessage = '';
   saving = false;
 
@@ -40,8 +41,8 @@ export class PeriodsNew implements OnInit {
       await this.periodoService.create({ name: this.name, startDate: this.startDate, endDate: this.endDate });
       this.saveMessage = '✓ Período creado y activado. Ya se pueden registrar ingresos y gastos.';
       this.name = '';
-      this.startDate = new Date().toISOString().split('T')[0];
-      this.endDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+      this.startDate = todayLocalISO();
+      this.endDate = endOfCurrentMonthISO();
     } catch (e: any) {
       this.saveMessage = '✗ ' + (e?.error?.error?.message ?? 'Error al crear período');
     } finally {

@@ -62,15 +62,4 @@
       </div>
     </div>
   }
-
-  @if ((data?.recomendaciones?.length ?? 0) > 0) {
-    <div class="rec-box">
-      <div class="rec-title">RECOMENDACIONES</div>
-      <ul class="rec-list">
-        @for (r of data!.recomendaciones; track r) {
-          <li>{{ r }}</li>
-        }
-      </ul>
-    </div>
-  }
 }

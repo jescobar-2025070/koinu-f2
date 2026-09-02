@@ -127,35 +127,6 @@ h2.welcome {
   color: #ff8a80;
 }
 
-.rec-box {
-  margin-top: 18px;
-  background: rgba(0, 229, 255, 0.06);
-  border: 1px solid rgba(0, 229, 255, 0.22);
-  border-radius: 16px;
-  padding: 20px 24px;
-}
-
-.rec-title {
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--cyan);
-  margin-bottom: 12px;
-}
-
-.rec-list {
-  margin: 0;
-  padding-left: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.rec-list li {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.85);
-}
-
 @media (max-width: 768px) {
   .budget-stats {
     grid-template-columns: 1fr 1fr;

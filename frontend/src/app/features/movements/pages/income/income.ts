@@ -5,6 +5,7 @@ import { PeriodoService } from '../../../../core/services/periodo.service';
 import { CategoriaService } from '../../../../core/services/categoria.service';
 import { MovimientoService } from '../../../../core/services/movimiento.service';
 import { Periodo, Categoria } from '../../../../core/models/api.models';
+import { todayLocalISO } from '../../../../core/utils/date.util';
 
 @Component({
   selector: 'app-movements-income',
@@ -26,7 +27,7 @@ export class MovementsIncome implements OnInit {
   monto = 0;
   impuestoPct = 5;
   descripcion = '';
-  fecha = new Date().toISOString().split('T')[0];
+  fecha = todayLocalISO();
   saveMessage = '';
   saving = false;
 

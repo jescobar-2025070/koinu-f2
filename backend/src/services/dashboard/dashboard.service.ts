@@ -33,7 +33,6 @@ export interface DashboardData {
   } | null;
   disponiblePorPresupuesto: number | null;
   disponible: number;
-  recomendaciones: string[];
   objetivos: DashboardObjetivo[];
 }
 
@@ -64,7 +63,6 @@ export class DashboardService {
         presupuesto: null,
         disponiblePorPresupuesto: null,
         disponible: 0,
-        recomendaciones: [],
         objetivos: [],
       };
     }
@@ -112,12 +110,6 @@ export class DashboardService {
       presupuesto,
       disponiblePorPresupuesto,
       disponible,
-      recomendaciones: this.buildRecomendaciones({
-        presupuesto,
-        totalGastos,
-        totalIngresos,
-        disponiblePorIngresos,
-      }),
       objetivos: objetivosFiltrados.map((o) => ({
         id: o.id,
         name: o.name,
@@ -128,44 +120,5 @@ export class DashboardService {
         periodoId: o.periodoId,
       })),
     };
-  }
-
-  private buildRecomendaciones(input: {
-    presupuesto: DashboardData['presupuesto'];
-    totalGastos: number;
-    totalIngresos: number;
-    disponiblePorIngresos: number;
-  }): string[] {
-    const recomendaciones: string[] = [];
-
-    if (input.presupuesto) {
-      if (input.totalGastos > Number(input.presupuesto.totalAmount)) {
-        const excedente = input.totalGastos - Number(input.presupuesto.totalAmount);
-        recomendaciones.push(
-          `Llevas ${excedente.toFixed(2)} por encima de tu presupuesto: revisa tus gastos y ajusta las asignaciones.`,
-        );
-      } else if (Number(input.presupuesto.totalAmount) - input.totalGastos > 0) {
-        recomendaciones.push(
-          'Tienes margen dentro de tu presupuesto: puedes asignar el sobrante a un objetivo de ahorro.',
-        );
-      }
-      if (input.presupuesto.asignadoTotal < Number(input.presupuesto.totalAmount)) {
-        recomendaciones.push(
-          `Tienes ${Number(input.presupuesto.totalAmount) - input.presupuesto.asignadoTotal} sin asignar en el presupuesto.`,
-        );
-      }
-    } else if (input.disponiblePorIngresos > 0) {
-      recomendaciones.push(
-        'Aún no defines presupuesto para este período: crearlo te ayuda a controlar tus gastos mejor.',
-      );
-    }
-
-    if (input.disponiblePorIngresos < 0) {
-      recomendaciones.push(
-        'Tus gastos superan tus ingresos: considera recortar gastos o aplazar compras no esenciales.',
-      );
-    }
-
-    return recomendaciones;
   }
 }

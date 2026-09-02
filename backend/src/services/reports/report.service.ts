@@ -45,7 +45,6 @@ export interface ReportData {
     progress: number;
     status: string;
   }[];
-  recomendaciones: string[];
   generadoEn: Date;
 }
 
@@ -168,14 +167,6 @@ export class ReportService {
       status: o.status,
     }));
 
-    const recomendaciones = this.buildRecommendations({
-      totalIngresos,
-      totalGastos,
-      disponible,
-      presupuestoInfo,
-      objetivos: objetivosInfo,
-    });
-
     return {
       periodo: {
         id: periodo.id,
@@ -190,43 +181,7 @@ export class ReportService {
       presupuesto: presupuestoInfo,
       porCategoria,
       objetivos: objetivosInfo,
-      recomendaciones,
       generadoEn: new Date(),
     };
-  }
-
-  private buildRecommendations(data: {
-    totalIngresos: number;
-    totalGastos: number;
-    disponible: number;
-    presupuestoInfo: ReportData['presupuesto'];
-    objetivos: ReportData['objetivos'];
-  }): string[] {
-    const recomendaciones: string[] = [];
-
-    if (data.totalIngresos <= 0) {
-      recomendaciones.push('Aún no tienes ingresos registrados en este período. Considera registrar tus ingresos para obtener un análisis completo.');
-    }
-
-    const objetivoActivo = data.objetivos.some((o) => o.status === 'ACTIVE');
-    if (data.disponible > 0 && objetivoActivo) {
-      recomendaciones.push('Considera apartar una parte de tu ingreso disponible para tus objetivos.');
-    } else if (data.disponible > 0 && !objetivoActivo) {
-      recomendaciones.push('Tienes ingreso disponible. Define un objetivo financiero para canalizar tus ahorros.');
-    } else if (data.disponible <= 0) {
-      recomendaciones.push('Tu ingreso disponible es cero o negativo. Revisa tus gastos para equilibrar tu período.');
-    }
-
-    if (data.presupuestoInfo) {
-      if (data.presupuestoInfo.excedente > 0) {
-        recomendaciones.push(`Has superado tu presupuesto en Q ${data.presupuestoInfo.excedente.toFixed(2)}. Considera reducir gastos o ajustar tu presupuesto.`);
-      } else {
-        recomendaciones.push('Te mantienes dentro de tu presupuesto. Buen trabajo controlando tus gastos.');
-      }
-    } else {
-      recomendaciones.push('Definir un presupuesto te ayudará a controlar mejor tus gastos del período.');
-    }
-
-    return recomendaciones;
   }
 }

@@ -133,7 +133,6 @@ export interface DashboardData {
   } | null;
   disponiblePorPresupuesto: number | null;
   disponible: number;
-  recomendaciones: string[];
   objetivos: DashboardObjetivo[];
 }
 
@@ -170,7 +169,6 @@ export interface ReportData {
     progress: number;
     status: string;
   }[];
-  recomendaciones: string[];
   generadoEn: string;
 }
 
