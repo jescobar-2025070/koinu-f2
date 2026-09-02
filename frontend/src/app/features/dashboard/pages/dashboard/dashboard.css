@@ -40,7 +40,7 @@ h2.welcome {
 }
 
 .objective-values .cyan {
-  color: var(--cyan);
+  color: var(--cyan, #0cc0df);
 }
 
 .objective-values .separator {
@@ -69,7 +69,7 @@ h2.welcome {
   position: absolute;
   inset: 0;
   width: var(--pct, 67%);
-  background: linear-gradient(90deg, #8fe3ff, var(--cyan));
+  background: linear-gradient(90deg, #8fe3ff, var(--cyan, #0cc0df));
   border-radius: var(--radius-pill);
 }
 
@@ -146,6 +146,14 @@ h2.welcome {
 
 .budget-stats > * {
   min-width: 0;
+}
+
+.stat-value.green {
+  color: #7ed957;
+}
+
+.stat-value.cyan {
+  color: #0cc0df;
 }
 
 .stat-value.negative {
